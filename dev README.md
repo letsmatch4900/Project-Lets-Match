@@ -1,0 +1,3 @@
+- The central branch for integrating all features and bug fixes.
+- Frequently updated by merging feature and bugfix branches.
+- Regular testing happens here.
