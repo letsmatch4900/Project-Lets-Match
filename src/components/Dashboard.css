@@ -1,0 +1,90 @@
+/* Dashboard.css */
+.dashboard {
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-logo h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.navbar-auth {
+    display: flex;
+    align-items: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-info span {
+    color: #333;
+    font-weight: 500;
+}
+
+.log-in-btn,
+.sign-out-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.log-in-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.log-in-btn:hover {
+    background-color: #0056b3;
+}
+
+.sign-out-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.sign-out-btn:hover {
+    background-color: #c82333;
+}
+
+.dashboard-content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.welcome-message,
+.guest-message {
+    text-align: center;
+    padding: 2rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 1rem;
+    }
+
+    .user-info {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
