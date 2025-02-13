@@ -31,28 +31,49 @@ const Recovery = () => {
     setMessage("");
 
     if (!email) {
-        setError("Please enter your email.");
-        return;
+      setError("Please enter your email.");
+      return;
     }
 
     try {
-        await sendPasswordResetEmail(auth, email);
-        setMessage("Password reset link sent! Opening reset page...");
-        
-        // Simulate Firebase Emulator behavior (since real email is not sent)
-        const resetUrl = `http://localhost:3000/recovery?oobCode=FAKE_RESET_CODE`;
-        console.log(`🔗 Open this link to reset your password: ${resetUrl}`);
+      await sendPasswordResetEmail(auth, email);
+      setMessage("Password reset link sent! Opening reset page...");
 
-        // **Automatically open the link in a new tab**
-        setTimeout(() => {
-            window.open(resetUrl, "_blank");
-        }, 2000);
+      // Simulate Firebase Emulator behavior (since real email is not sent)
+      const resetUrl = `http://localhost:3000/recovery?oobCode=FAKE_RESET_CODE`;
+      console.log(`🔗 Open this link to reset your password: ${resetUrl}`);
+
+      // **Automatically open the link in a new tab**
+      setTimeout(() => {
+        window.open(resetUrl, "_blank");
+      }, 2000);
 
     } catch (err) {
-        setError(err.message);
+      setError(err.message);
     }
-};
+  };
 
+  // 📌 Function to confirm password reset
+  const handlePasswordResetConfirm = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      await confirmPasswordReset(auth, oobCode, newPassword);
+      setMessage("Password reset successfully! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
     <div className="recovery-container">
