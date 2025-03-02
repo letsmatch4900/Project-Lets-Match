@@ -1,0 +1,42 @@
+.review-questions-container {
+    width: 80%;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #f1f1f1;
+}
+
+.review-questions-container h2 {
+    color: #222;
+    text-align: center;
+}
+
+.review-questions-container ul {
+    list-style: none;
+    padding: 0;
+}
+
+.review-questions-container li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.review-questions-container button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.review-questions-container button:hover {
+    background-color: #c82333;
+}
