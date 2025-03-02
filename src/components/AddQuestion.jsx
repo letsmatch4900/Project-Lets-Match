@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { addDocument } from "../services/firestore";  //  Import Firestore function
+import { addDocument } from "../services/firestore";
+import "./AddQuestion.css";  // ✅ Import CSS file
 
 const AddQuestion = () => {
     const [question, setQuestion] = useState("");
@@ -8,7 +9,7 @@ const AddQuestion = () => {
         e.preventDefault();
         if (!question.trim()) return;
 
-        await addDocument("questions", {  //  Firestore: Add document to "questions" collection
+        await addDocument("questions", {
             text: question,
             createdAt: new Date()
         });
@@ -18,7 +19,7 @@ const AddQuestion = () => {
     };
 
     return (
-        <div>
+        <div className="add-question-container">  {/* ✅ Apply CSS class */}
             <h2>Add a Question</h2>
             <form onSubmit={handleSubmit}>
                 <input
@@ -28,7 +29,7 @@ const AddQuestion = () => {
                     placeholder="Enter your question"
                     required
                 />
-                <button type="submit">Submit Question</button>  {/* ✅ Clickable button */}
+                <button type="submit">Submit Question</button>
             </form>
         </div>
     );
