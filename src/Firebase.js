@@ -20,7 +20,7 @@ const config = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(config);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
