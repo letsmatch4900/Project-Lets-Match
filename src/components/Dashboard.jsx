@@ -61,7 +61,7 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <div className="guest-message">
-                        <h2>Welcome Guest Live Release</h2>
+                        <h2>Welcome Guest Live Release 24</h2>
                         <p>Please Log In</p>
                     </div>
                 )}
