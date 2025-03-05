@@ -61,7 +61,7 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <div className="guest-message">
-                        <h2>Welcome Guest</h2>
+                        <h2>Welcome Guest lol</h2>
                         <p>Please Log In</p>
                     </div>
                 )}
