@@ -3,7 +3,7 @@ name: Deploy React App to Firebase
 on:
   push:
     branches:
-      - release  # Change this if you use a different branch
+      - main  # Change this if you use a different branch
 
 jobs:
   build:
