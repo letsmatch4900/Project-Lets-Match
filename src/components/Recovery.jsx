@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { sendPasswordResetEmail, confirmPasswordReset } from "firebase/auth";
-import { auth } from "../Firebase";
+import { auth } from "../firebase";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./Recovery.css"; // Keep using the same CSS file
 

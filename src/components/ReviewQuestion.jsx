@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getDocuments, deleteDocument } from "../services/firestore";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
-import "./ReviewQuestions.css";  // ✅ Import CSS file
+import "./ReviewQuestion.css";  // ✅ Import CSS file
 
 const ReviewQuestions = () => {
     const [questions, setQuestions] = useState([]);

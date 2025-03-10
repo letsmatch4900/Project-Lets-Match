@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../Firebase";
+import { auth } from "../firebase";
 import "./Dashboard.css";
 
 const Dashboard = () => {
