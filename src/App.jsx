@@ -4,6 +4,8 @@ import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import Register from "./components/Register";
 import Recovery from "./components/Recovery";
+import AddQuestion from "./components/AddQuestion";
+import ReviewQuestion from "./components/ReviewQuestion";
 
 function App() {
   return (
@@ -13,7 +15,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/recovery" element={<Recovery />} />
-
+        <Route path="/add-question" element={<AddQuestion />} />
+        <Route path="/review-question" element={<ReviewQuestion />} />
       </Routes>
     </Router>
   );
