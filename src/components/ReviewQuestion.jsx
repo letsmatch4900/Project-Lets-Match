@@ -1,57 +1,102 @@
-import React, { useEffect, useState } from "react";
-import { getDocuments, deleteDocument } from "../services/firestore";
-import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
-import "./ReviewQuestion.css";  // ✅ Import CSS file
+import React, { useState, useEffect } from "react";
+import { getDocuments, updateDocument, deleteDocument } from "../services/firestore"; // Import Firestore functions
+import "./ReviewQuestion.css";  // Ensure you have styles for the UI
 
-const ReviewQuestions = () => {
+const ReviewQuestion = () => {
     const [questions, setQuestions] = useState([]);
-    const [role, setRole] = useState(null);
+    const [selectedQuestion, setSelectedQuestion] = useState(null);
+    const [editedText, setEditedText] = useState("");
 
+    // Fetch questions from Firestore
     useEffect(() => {
         const fetchQuestions = async () => {
             const fetchedQuestions = await getDocuments("questions");
             setQuestions(fetchedQuestions);
         };
-
-        const fetchRole = async () => {
-            const user = auth.currentUser;
-            if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    setRole(userDoc.data().role);
-                }
-            }
-        };
-
         fetchQuestions();
-        fetchRole();
     }, []);
 
-    const handleDelete = async (id) => {
-        if (role !== "admin") {
-            alert("You do not have permission to delete questions.");
-            return;
-        }
-        await deleteDocument("questions", id);
-        setQuestions(questions.filter(q => q.id !== id));
+    // Function to select a question for editing
+    const handleSelectQuestion = (question) => {
+        setSelectedQuestion(question);
+        setEditedText(question.text);  // Load the current question text into the input field
+    };
+
+    // ✅ Function to update question status with alert()
+    const handleUpdateStatus = async (status) => {
+        if (!selectedQuestion) return;
+
+        const updatedQuestion = {
+            ...selectedQuestion,
+            text: editedText,
+            status: status,
+        };
+
+        await updateDocument("questions", selectedQuestion.id, updatedQuestion);
+
+        // Update state
+        setQuestions((prev) => 
+            prev.map((q) => (q.id === selectedQuestion.id ? updatedQuestion : q))
+        );
+
+        // ✅ Show alert notification
+        alert(`Question has been ${status}!`);
+
+        // Reset selection
+        setSelectedQuestion(null);
+        setEditedText("");
+    };
+
+    // ✅ Function to delete a question with alert()
+    const handleDeleteQuestion = async () => {
+        if (!selectedQuestion) return;
+
+        await deleteDocument("questions", selectedQuestion.id);
+
+        // Remove question from state
+        setQuestions((prev) => prev.filter((q) => q.id !== selectedQuestion.id));
+
+        // ✅ Show alert notification
+        alert("Question has been deleted!");
+
+        // Reset selection
+        setSelectedQuestion(null);
+        setEditedText("");
     };
 
     return (
-        <div className="review-questions-container">  {/* ✅ Apply CSS class */}
+        <div className="review-questions-container">
             <h2>Review Questions</h2>
-            <ul>
-                {questions.map(q => (
-                    <li key={q.id}>
-                        {q.text} 
-                        {role === "admin" && (
-                            <button onClick={() => handleDelete(q.id)}>Delete</button>
-                        )}
-                    </li>
+
+            {/* List Questions */}
+            <div className="question-list">
+                {questions.map((q) => (
+                    <button key={q.id} className="question-item" onClick={() => handleSelectQuestion(q)}>
+                        {q.text}
+                    </button>
                 ))}
-            </ul>
+            </div>
+
+            {/* Edit Section */}
+            {selectedQuestion && (
+                <div className="edit-section">
+                    <h3>Edit Question</h3>
+                    <input
+                        type="text"
+                        value={editedText}
+                        onChange={(e) => setEditedText(e.target.value)}
+                    />
+
+                    <div className="button-group">
+                        <button onClick={() => handleUpdateStatus("approved")} className="approve-btn">Approve</button>
+                        <button onClick={() => handleUpdateStatus("rejected")} className="reject-btn">Reject</button>
+                        <button onClick={() => handleUpdateStatus("pending")} className="pending-btn">Keep Pending</button>
+                        <button onClick={handleDeleteQuestion} className="delete-btn">Delete</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-export default ReviewQuestions;
+export default ReviewQuestion;

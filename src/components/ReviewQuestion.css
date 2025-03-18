@@ -1,42 +1,61 @@
 .review-questions-container {
     width: 80%;
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    background-color: #f1f1f1;
-}
-
-.review-questions-container h2 {
-    color: #222;
+    margin: auto;
     text-align: center;
 }
 
-.review-questions-container ul {
-    list-style: none;
-    padding: 0;
-}
-
-.review-questions-container li {
+.question-list {
     display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background: white;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+    align-items: center;
 }
 
-.review-questions-container button {
-    background-color: #dc3545;
-    color: white;
+
+/* Make sure text is visible */
+.question-item {
+    background-color: #fff;  /* White background */
+    color: #333;  /* Dark text for better visibility */
+    border: 1px solid #ccc;  /* Subtle border */
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Hover effect */
+.question-item:hover {
+    background-color: #f1f1f1;
+    color: #000;  /* Ensure visibility on hover */
+}
+
+.edit-section {
+    margin-top: 20px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.button-group button {
+    margin: 5px;
+    padding: 8px 15px;
     border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
     cursor: pointer;
 }
 
-.review-questions-container button:hover {
-    background-color: #c82333;
+.approve-btn {
+    background-color: green;
+    color: white;
+}
+
+.reject-btn {
+    background-color: red;
+    color: white;
+}
+
+.pending-btn {
+    background-color: orange;
+    color: white;
 }
