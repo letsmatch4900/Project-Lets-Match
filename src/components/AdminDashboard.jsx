@@ -38,7 +38,7 @@ const AdminDashboard = () => {
                 <h2>Home</h2>
                 <p>Welcome, {user ? user.email : "Admin"}</p>
                 <button className="option-btn">Category</button>
-                <button className="option-btn" onClick={() => navigate("/review-questions")}>Review questions</button>
+                <button className="option-btn" onClick={() => navigate("/review-question")}>Review questions</button>
                 <button className="option-btn" onClick={() => navigate("/view-matches")}>View matches</button>
                 <button className="option-btn" onClick={() => navigate("/see-feedback")}>See feedback</button>
             </div>
