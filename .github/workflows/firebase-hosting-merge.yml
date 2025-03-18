@@ -6,21 +6,30 @@ on:
   push:
     branches:
       - main
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-  steps:
-  - uses: actions/checkout@v4
 
-  - name: Install Dependencies  # ✅ This ensures dependencies are installed
-    run: npm install
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ✅ Fetch full history to prevent Git errors
 
-  - name: Build React App
-    run: npm run build
+      - name: Set up Node.js
+        uses: actions/setup-node@v20  # ✅ Ensure Node.js is installed
 
-  - uses: FirebaseExtended/action-hosting-deploy@v0
-    with:
-      repoToken: ${{ secrets.GITHUB_TOKEN }}
-      firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LETS_MATCH_10E18 }}
-      channelId: live
-      projectId: lets-match-10e18
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LETS_MATCH_10E18 }}
+          channelId: live
+          projectId: lets-match-10e18
