@@ -1,11 +1,25 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import "./UserDashboard.css";
 
 const UserDashboard = () => {
+    const [user, setUser] = useState(null);
+    const [isCategoryOpen, setIsCategoryOpen] = useState(false); // State to toggle category options
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                setUser(user);
+            } else {
+                setUser(null);
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     const handleSignOut = async () => {
         try {
@@ -15,7 +29,11 @@ const UserDashboard = () => {
             console.error("Error signing out:", error);
         }
     };
-
+    // Toggle category options
+    const toggleCategory = () => {
+        setIsCategoryOpen(!isCategoryOpen);
+    };
+    
     return (
         <div className="user-dashboard">
             {/* Top Bar */}
@@ -32,13 +50,25 @@ const UserDashboard = () => {
             {/* Main Content */}
             <div className="main-content">
                 <h2>Home</h2>
-                <p>Welcome </p>
+                <p>Welcome {user ? user.email || "User" : "Guest"}</p>
+
+                {/* Category Button and Sub-options */}
+                <div className="category-section">
+                        <button onClick={toggleCategory} className="option-btn">
+                            Category
+                        </button>
+                        <div className={`sub-options ${isCategoryOpen ? "open" : ""}`}>
+                            <button className="sub-option-btn" onClick={() => navigate("/dating")}>
+                                Dating
+                            </button>
+                            <button className="sub-option-btn" onClick={() => navigate("/jobs")}>
+                                Jobs
+                            </button>
+                        </div>
+                    </div>
 
                 {/* User Specific Buttons */}
                 <div className="user-options">
-                    <button className="option-btn" onClick={() => navigate("/category")}>
-                        Category
-                    </button>
                     <button className="option-btn" onClick={() => navigate("/build-profile")}>
                         Build my profile
                     </button>
