@@ -1,20 +1,28 @@
 import React, {useState, useEffect} from "react";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
 import "./UserDashboard.css";
 
 const UserDashboard = () => {
     const [user, setUser] = useState(null);
+    const [userData, setUserData] = useState(null);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false); // State to toggle category options
     const navigate = useNavigate();
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
             if (user) {
                 setUser(user);
+                // Fetch user data from Firestore
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    setUserData(userDoc.data());
+                }
             } else {
                 setUser(null);
+                setUserData(null);
             }
         });
 
@@ -40,7 +48,7 @@ const UserDashboard = () => {
             <div className="top-bar">
                 <h1>Let's Match!</h1>
                 <div className="top-right">
-                    <span>Welcome </span> {/* This should be dynamically fetched */}
+                    <span>Welcome {userData?.name || "User"}</span>
                     <button onClick={handleSignOut} className="log-out-btn">
                         Log Out
                     </button>
@@ -50,7 +58,7 @@ const UserDashboard = () => {
             {/* Main Content */}
             <div className="main-content">
                 <h2>Home</h2>
-                <p>Welcome {user ? user.email || "User" : "Guest"}</p>
+                <p>Welcome {userData?.name || user?.email || "User"}</p>
 
                 {/* Category Button and Sub-options */}
                 <div className="category-section">

@@ -6,6 +6,7 @@ import Register from "./components/Register";
 import Recovery from "./components/Recovery";
 import AddQuestion from "./components/AddQuestion";
 import ReviewQuestion from "./components/ReviewQuestion";
+import BuildProfile from "./components/BuildProfile";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/recovery" element={<Recovery />} />
         <Route path="/add-question" element={<AddQuestion />} />
         <Route path="/review-question" element={<ReviewQuestion />} />
+        <Route path="/build-profile" element={<BuildProfile />} />
       </Routes>
     </Router>
   );
