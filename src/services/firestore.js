@@ -1,5 +1,6 @@
 import { db } from "../firebase";  // ✅ Import Firestore from firebase.js
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import { query, where, orderBy  } from "firebase/firestore"; // Add to existing import line
 
 // ✅ Add a new question to Firestore with default "pending" status
 export const addDocument = async (collectionName, data) => {
@@ -44,5 +45,20 @@ export const updateDocument = async (collectionName, docId, newData) => {
         console.log("Document updated:", docId);
     } catch (error) {
         console.error("Error updating document:", error);
+    }
+};
+export const getUserQuestions = async (userId) => {
+    try {
+        const q = query(
+            collection(db, "questions"),
+            where("submittedBy", "==", userId),
+            orderBy("createdAt", "desc") // optional, shows latest first
+        );
+
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error("Error fetching user questions:", error);
+        return [];
     }
 };

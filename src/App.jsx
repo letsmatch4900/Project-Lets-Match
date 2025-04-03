@@ -8,6 +8,8 @@ import AddQuestion from "./components/AddQuestion";
 import ReviewQuestion from "./components/ReviewQuestion";
 import BuildProfile from "./components/BuildProfile";
 import Settings from "./components/Settings";
+import AdminDashboard from "./components/AdminDashboard";   // ✅ Added import
+import UserDashboard from "./components/UserDashboard";     // ✅ Added import
 
 function App() {
   return (
@@ -20,11 +22,14 @@ function App() {
         <Route path="/add-question" element={<AddQuestion />} />
         <Route path="/review-question" element={<ReviewQuestion />} />
         <Route path="/build-profile" element={<BuildProfile />} />
-        <Route path="/Settings" element={<Settings />} />
+        <Route path="/settings" element={<Settings />} />
+
+        {/* ✅ Routes for admin and user dashboards */}
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/user-dashboard" element={<UserDashboard />} />
       </Routes>
     </Router>
   );
 }
 
 export default App;
- 

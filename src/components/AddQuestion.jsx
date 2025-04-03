@@ -1,39 +1,117 @@
-import React, { useState } from "react"; // Used to manage input field state
-import { addDocument } from "../services/firestore"; // A function to add a document to Firestore, likely defined in ../services/firestore.
-import { auth } from "../firebase";  // Import Firebase auth for user tracking
-import "./AddQuestion.css"; // Provides styling for the component
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { addDocument, getUserQuestions } from "../services/firestore";
+import { auth, db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
+import "./AddQuestion.css";
 
-//Defines a functional component AddQuestion
-const AddQuestion = () => { 
-    //Uses use state to manage the question input field
-    const [question, setQuestion] = useState(""); 
+const AddQuestion = () => {
+    const [question, setQuestion] = useState("");
+    const [userQuestions, setUserQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState(null);
+    const navigate = useNavigate();
 
-    //This function handles form submission when the user submits a question.
+    // Fetch the user's role (admin/user)
+    const fetchUserRole = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            setUserRole(docSnap.data().role);
+        } else {
+            console.warn("User role not found.");
+        }
+    };
+
+    // Fetch all questions submitted by the current user
+    const fetchUserQuestions = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        try {
+            const questions = await getUserQuestions(user.uid);
+            setUserQuestions(questions || []);
+        } catch (error) {
+            console.error("Error fetching user questions:", error);
+            setUserQuestions([]);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        fetchUserRole();
+        fetchUserQuestions();
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!question.trim()) return;
 
-        // Get current user (if logged in)
-        // if a user is logged in, it assigns their uid, otherwise, it marks them as anonymous
         const user = auth.currentUser;
         const userId = user ? user.uid : "anonymous";
 
-        // Add question to Firestore with status field
         await addDocument("questions", {
-            text: question, // The actual question
-            status: "pending",  // Set default status | indicating it hasn't been answered yet
-            submittedBy: userId,  // Track the user who submitted it, store the userId or anonymous if not logged in
-            createdAt: new Date() // Stores the timestamp of submission
+            text: question,
+            status: "pending",
+            submittedBy: userId,
+            createdAt: new Date()
         });
 
-        setQuestion(""); // Clears the input field after submission
-        alert("Question added successfully!"); // Shows an alert to confirm the question was added
+        setQuestion("");
+        fetchUserQuestions(); // Refresh the list after submission
+        alert("Question added successfully!");
     };
 
-    // JSX Return (UI)
+    // Navigate back based on user role
+    const handleBack = () => {
+        if (userRole === "admin") {
+            navigate("/admin-dashboard");
+        } else {
+            navigate("/user-dashboard");
+        }
+    };
+
+    // Return the proper icon for question status
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case "approved":
+                return "✅";
+            case "rejected":
+                return "❌";
+            default:
+                return "🕒";
+        }
+    };
+
     return (
         <div className="add-question-container">
+            {/* Back button */}
+            <button onClick={handleBack} className="back-button">
+                ← Back to Dashboard
+            </button>
+
             <h2>Add a Question</h2>
+
+            {/* Show submitted questions */}
+            {loading ? (
+                <p>Loading your submitted questions...</p>
+            ) : userQuestions.length === 0 ? (
+                <p>You haven’t submitted any questions yet.</p>
+            ) : (
+                <div className="question-list">
+                    {userQuestions.map((q, index) => (
+                        <div key={index} className="question-item">
+                            {q.text}
+                            <span className="status-icon">{getStatusIcon(q.status)}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Form to submit new question */}
             <form onSubmit={handleSubmit}>
                 <input
                     type="text"
