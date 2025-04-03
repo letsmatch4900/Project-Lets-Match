@@ -54,3 +54,39 @@ body {
    color: #333;
    margin-top: 15px;
 }
+
+/* ... your existing styles remain ... */
+
+/* Bottom Navigation Bar */
+.bottom-nav {
+   position: fixed;
+   bottom: 0;
+   left: 0;
+   width: 100%;
+   display: flex;
+   justify-content: space-around;
+   align-items: center;
+   background-color: #adadb4;
+   padding: 0.5rem 0;
+   border-top: 1px solid #ccc;
+   z-index: 1000;
+}
+
+.bottom-nav button {
+   background: none;
+   border: none;
+   font-size: 1.5rem;
+   color: #000;
+   cursor: pointer;
+   transition: transform 0.2s ease;
+}
+
+.bottom-nav button:hover {
+   transform: scale(1.2);
+   color: #333;
+}
+
+/* Fix layout shift due to fixed bottom bar */
+.main-content {
+   padding-bottom: 60px;
+}
