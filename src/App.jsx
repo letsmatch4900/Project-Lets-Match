@@ -7,6 +7,7 @@ import Recovery from "./components/Recovery";
 import AddQuestion from "./components/AddQuestion";
 import ReviewQuestion from "./components/ReviewQuestion";
 import BuildProfile from "./components/BuildProfile";
+import Settings from "./components/Settings";
 
 function App() {
   return (
@@ -19,9 +20,11 @@ function App() {
         <Route path="/add-question" element={<AddQuestion />} />
         <Route path="/review-question" element={<ReviewQuestion />} />
         <Route path="/build-profile" element={<BuildProfile />} />
+        <Route path="/Settings" element={<Settings />} />
       </Routes>
     </Router>
   );
 }
 
 export default App;
+ 

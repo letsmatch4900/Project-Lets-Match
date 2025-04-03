@@ -60,6 +60,7 @@ const Login = () => {
         />
         <button type="submit">Login</button>
       </form>
+      {/* Forgot Password Link */}
       <p className="forgot-password" onClick={() => navigate("/recovery")}>
   Forgot Password?
      </p>

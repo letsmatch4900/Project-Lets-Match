@@ -51,6 +51,20 @@ body {
     background-color: #0056b3;
 }
 
+.settings-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.settings-btn:hover {
+    background-color: #0056b3;
+}
+
 /* Main Content */
 .main-content {
     background: white;

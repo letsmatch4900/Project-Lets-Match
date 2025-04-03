@@ -52,6 +52,9 @@ const UserDashboard = () => {
                     <button onClick={handleSignOut} className="log-out-btn">
                         Log Out
                     </button>
+                    <button className="settings-btn" onClick= {() => navigate("/settings")}>
+                        Settings
+                    </button>
                 </div>
             </div>
 

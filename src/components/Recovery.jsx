@@ -37,16 +37,16 @@ const Recovery = () => {
 
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage("Password reset link sent! Opening reset page...");
+      setMessage("Password reset link sent!");
 
       // Simulate Firebase Emulator behavior (since real email is not sent)
-      const resetUrl = `http://localhost:3000/recovery?oobCode=FAKE_RESET_CODE`;
-      console.log(`🔗 Open this link to reset your password: ${resetUrl}`);
+      //const resetUrl = `http://localhost:3000/recovery?oobCode=FAKE_RESET_CODE`;
+      //console.log(`🔗 Open this link to reset your password: ${resetUrl}`);
 
       // **Automatically open the link in a new tab**
-      setTimeout(() => {
-        window.open(resetUrl, "_blank");
-      }, 2000);
+      //setTimeout(() => {
+      //  window.open(resetUrl, "_blank");
+      //}, 2000);
 
     } catch (err) {
       setError(err.message);
