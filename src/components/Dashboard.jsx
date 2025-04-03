@@ -1,51 +1,104 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-import AdminDashboard from "./AdminDashboard";
-import UserDashboard from "./UserDashboard";
-import "./Dashboard.css"; // Ensure this CSS file exists
+import { signOut } from "firebase/auth";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
+import { auth } from "../Firebase";
+import "./Dashboard.css";
 
-const auth = getAuth();
-const db = getFirestore();
+// Icon imports
+import { FaHome, FaUser, FaQuestion, FaHeart, FaCommentDots, FaShareAlt, FaCog } from "react-icons/fa";
 
 const Dashboard = () => {
-    const [role, setRole] = useState(null);
-    const navigate = useNavigate();
+   const [user, setUser] = useState(null);
+   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+   const navigate = useNavigate();
+   const location = useLocation();
 
-    useEffect(() => {
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const docRef = doc(db, "roles", user.uid);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setRole(docSnap.data().role);
-                } else {
-                    setRole("user");
-                }
-            } else {
-                setRole(null);
-            }
-        });
-    }, []);
+   useEffect(() => {
+       const unsubscribe = auth.onAuthStateChanged((user) => {
+           if (user) {
+               setUser(user);
+           } else {
+               setUser(null);
+           }
+       });
 
-    if (role === "admin") {
-        return <AdminDashboard />;
-    } else if (role === "user") {
-        return <UserDashboard />;
-    }
+       return () => unsubscribe();
+   }, []);
 
-    return (
-        <div className="welcome-page">
-            <div className="welcome-container">
-                <h1>Let's Match!</h1>
-                <button onClick={() => navigate("/login")} className="log-in-btn">
-                    Log In
-                </button>
-            </div>
-            <p className="login-message">Welcome! Please log in to continue.</p>
-        </div>
-    );
+   const handleNavigateToLogin = () => {
+       navigate('/login');
+   };
+
+   const handleSignOut = async () => {
+       try {
+           await signOut(auth);
+           navigate("/");
+       } catch (error) {
+           console.error("Error signing out:", error);
+       }
+   };
+
+   const toggleCategory = () => {
+       setIsCategoryOpen(!isCategoryOpen);
+   };
+
+   const handleNavClick = (path) => {
+       navigate(path);
+   };
+
+   return (
+       <div className="dashboard">
+           <div className="top-bar">
+               <div className="top-left">
+                   <h1>Let's Match!</h1>
+               </div>
+               <div className="top-right">
+                   {user ? (
+                       <div className="user-info">
+                           <span>Hello, {user.email}</span>
+                           <button onClick={handleSignOut} className="log-out-btn">Log Out</button>
+                       </div>
+                   ) : (
+                       <button onClick={handleNavigateToLogin} className="log-in-btn">Log In</button>
+                   )}
+               </div>
+           </div>
+
+           <div className="main-content">
+               <h2>Home</h2>
+               <div className="options">
+                   <p>Welcome {user ? user.email || "User" : "Guest"}</p>
+
+                   <div className="category-section">
+                       <button onClick={toggleCategory} className="option-btn">
+                           Category
+                       </button>
+                       <div className={`sub-options ${isCategoryOpen ? "open" : ""}`}>
+                           <button className="sub-option-btn">Dating</button>
+                           <button className="sub-option-btn">Jobs</button>
+                       </div>
+                   </div>
+
+                   <button className="option-btn" onClick={() => navigate('/build-profile')}>Build my profile</button>
+                   <button className="option-btn" onClick={() => navigate('/add-question')}>Add a question</button>
+                   <button className="option-btn" onClick={() => navigate('/matches')}>My matches</button>
+                   <button className="option-btn" onClick={() => navigate('/feedback')}>Feedback</button>
+                   <button className="option-btn" onClick={() => navigate('/share')}>Share</button>
+               </div>
+           </div>
+
+           {/* Always Visible Bottom Navigation */}
+           <div className="bottom-nav">
+               <button onClick={() => handleNavClick('/')}><FaHome /></button>
+               <button onClick={() => handleNavClick('/share')}><FaShareAlt /></button>
+               <button onClick={() => handleNavClick('/feedback')}><FaCommentDots /></button>
+               <button onClick={() => handleNavClick('/matches')}><FaHeart /></button>
+               <button onClick={() => handleNavClick('/build-profile')}><FaUser /></button>
+               <button onClick={() => handleNavClick('/add-question')}><FaQuestion /></button>
+               <button onClick={() => handleNavClick('/settings')}><FaCog /></button>
+           </div>
+       </div>
+   );
 };
 
 export default Dashboard;
