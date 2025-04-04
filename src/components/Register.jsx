@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { sendEmailVerification, deleteUser } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +11,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showProfileForm, setShowProfileForm] = useState(false);
+  //const [verificationPending, setVerificationPending] = useState(false);
   const [profile, setProfile] = useState({
     name: "",
     location: "",
@@ -22,9 +24,63 @@ const Register = () => {
     setError("");
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      setShowProfileForm(true);
-    } catch (err) {
-      setError(err.message);
+      const user = userCredential.user; // Get the user object
+
+      if (user.emailVerified) {
+        setShowProfileForm(true);
+        alert("Login successful!");
+      } else {
+        // Ask the user if they want to verify
+        const confirmVerify = window.confirm(
+          "Your email is not verified. Would you like to resend the verification email? You have 10 minutes to verify, or your account will be deleted."
+        );
+  
+        if (confirmVerify) {
+          await sendEmailVerification(user);
+          alert("Verification email sent. You have 5 minutes to verify.");
+  
+          // Start 10-minute timer
+          const timer = setTimeout(async () => {
+            try {
+              await user.reload(); // Reload the user object to check if email is verified
+
+              if (!user.emailVerified) {
+                await deleteUser(user); // Delete the user if not verified
+                alert("Time is up! Your account has been deleted.");
+              }
+            } catch (err) {
+              console.error("Error during deletion timer:", err);
+            }
+          }, 5 * 60 * 1000); // 5 minutes
+  
+          // Check every 2 seconds for email verification
+          const checkVerification = setInterval(async () => {
+            try {
+              await user.reload(); // Reload the user object
+
+              if (user.emailVerified) {
+                clearTimeout(timer); // Stop the deletion timer
+                clearInterval(checkVerification); // Stop checking
+                setShowProfileForm(true);
+                alert("Email verified! Please enter your information to create your account!");
+              }
+            } catch (err) {
+              console.error("Error checking verification:", err);
+              clearInterval(checkVerification); // Stop the interval on error
+            }
+          }, 2 * 1000); // Check every 2 seconds
+        } else {
+          await deleteUser(user); // Delete the user if they don’t want to verify
+          alert("Your account has been deleted.");
+        }
+      }
+    } catch (error) {
+      if (error.code === "auth/email-already-in-use") {
+        alert("This email is already associated with an account. Please log in or reset your password.");
+      } else {
+        console.error(error.message);
+        alert("Error logging in: " + error.message);
+      }
     }
   };
 
