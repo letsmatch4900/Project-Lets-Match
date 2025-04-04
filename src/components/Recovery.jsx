@@ -37,7 +37,7 @@ const Recovery = () => {
 
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage("Password reset link sent!");
+      setMessage("If there is an account associated with this email, you will receive a password reset link shortly.");
 
       // Simulate Firebase Emulator behavior (since real email is not sent)
       //const resetUrl = `http://localhost:3000/recovery?oobCode=FAKE_RESET_CODE`;
