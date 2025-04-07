@@ -32,7 +32,7 @@ const Register = () => {
       } else {
         // Ask the user if they want to verify
         const confirmVerify = window.confirm(
-          "Your email is not verified. Would you like to resend the verification email? You have 10 minutes to verify, or your account will be deleted."
+          "We will send you a verification email. You have 5 minutes to verify, or your account will not be created."
         );
   
         if (confirmVerify) {
@@ -42,11 +42,13 @@ const Register = () => {
           // Start 10-minute timer
           const timer = setTimeout(async () => {
             try {
-              await user.reload(); // Reload the user object to check if email is verified
-
-              if (!user.emailVerified) {
-                await deleteUser(user); // Delete the user if not verified
-                alert("Time is up! Your account has been deleted.");
+              const refreshedUser = auth.currentUser;
+              if (refreshedUser) {
+                await refreshedUser.reload();
+                if (!refreshedUser.emailVerified) {
+                  await deleteUser(refreshedUser);
+                  alert("Time is up! Your account has been deleted.");
+                }
               }
             } catch (err) {
               console.error("Error during deletion timer:", err);
@@ -76,7 +78,7 @@ const Register = () => {
       }
     } catch (error) {
       if (error.code === "auth/email-already-in-use") {
-        alert("This email is already associated with an account. Please log in or reset your password.");
+        alert("This email is either already associated with an account or pending verification. Please log in or reset your password.");
       } else {
         console.error(error.message);
         alert("Error logging in: " + error.message);

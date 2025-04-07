@@ -15,10 +15,27 @@ const Login = () => {
     e.preventDefault();
     setError("");
     setMessage("");
+
     try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Reload the user to get the latest verification status
+      await user.reload();
+
+      if (user.emailVerified) {
+        alert("Login successful!");
+        navigate("/");
+      } else {
+        // Sign the user out and show an error
+        await auth.signOut();
+        setError("This email isn’t associated with any account.");
+      }
+      /*
       await signInWithEmailAndPassword(auth, email, password);
       alert("Login successful!");
       navigate("/");
+      */
     } catch (err) {
       setError(err.message);
     }
