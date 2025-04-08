@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore"; 
+import { db } from "../firebase"; 
 import "./Login.css";
 
 const Login = () => {
@@ -20,22 +22,33 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Reload the user to get the latest verification status
-      await user.reload();
+      await user.reload(); // Reload user data
 
       if (user.emailVerified) {
-        alert("Login successful!");
-        navigate("/");
+        // Fetch user role from Firestore
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          const role = userData.role; // Retrieve the role field
+
+          alert("Login successful!");
+
+          // Navigate based on role
+          if (role === "admin") {
+            navigate("/admin-dashboard"); 
+          } else {
+            navigate("/user-dashboard"); 
+          }
+        } else {
+          setError("No user profile found. Please contact support.");
+          await auth.signOut();
+        }
       } else {
-        // Sign the user out and show an error
         await auth.signOut();
         setError("This email isn’t associated with any account.");
       }
-      /*
-      await signInWithEmailAndPassword(auth, email, password);
-      alert("Login successful!");
-      navigate("/");
-      */
     } catch (err) {
       setError(err.message);
     }
@@ -79,8 +92,8 @@ const Login = () => {
       </form>
       {/* Forgot Password Link */}
       <p className="forgot-password" onClick={() => navigate("/recovery")}>
-  Forgot Password?
-     </p>
+        Forgot Password?
+      </p>
 
       <p>Don't have an account?</p>
       <button className="register-button" onClick={() => navigate("/register")}>
