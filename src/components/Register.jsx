@@ -109,6 +109,7 @@ const Register = () => {
         location: profile.location.trim(),
         bio: profile.bio.trim(),
         email: user.email,
+        role: "user",
         createdAt: new Date(),
         updatedAt: new Date()
       });
