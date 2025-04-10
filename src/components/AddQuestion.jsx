@@ -13,8 +13,7 @@ const AddQuestion = () => {
     const navigate = useNavigate();
 
     // Fetch the user's role (admin/user)
-    const fetchUserRole = async () => {
-        const user = auth.currentUser;
+    const fetchUserRole = async (user) => {
         if (!user) return;
 
         const docRef = doc(db, "users", user.uid);
@@ -27,8 +26,7 @@ const AddQuestion = () => {
     };
 
     // Fetch all questions submitted by the current user
-    const fetchUserQuestions = async () => {
-        const user = auth.currentUser;
+    const fetchUserQuestions = async (user) => {
         if (!user) return;
 
         try {
@@ -42,26 +40,41 @@ const AddQuestion = () => {
     };
 
     useEffect(() => {
-        fetchUserRole();
-        fetchUserQuestions();
-    }, []);
+        // Listen for auth state changes
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (!user) {
+                navigate("/login");
+                return;
+            }
+            
+            setLoading(true);
+            fetchUserRole(user);
+            fetchUserQuestions(user);
+        });
+
+        // Clean up the listener when component unmounts
+        return () => unsubscribe();
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!question.trim()) return;
 
         const user = auth.currentUser;
-        const userId = user ? user.uid : "anonymous";
+        if (!user) {
+            navigate("/login");
+            return;
+        }
 
         await addDocument("questions", {
             text: question,
             status: "pending",
-            submittedBy: userId,
+            submittedBy: user.uid,
             createdAt: new Date()
         });
 
         setQuestion("");
-        fetchUserQuestions(); // Refresh the list after submission
+        fetchUserQuestions(user); // Refresh the list after submission
         alert("Question added successfully!");
     };
 

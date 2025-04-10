@@ -11,9 +11,11 @@ body {
    display: flex;
    flex-direction: column;
    align-items: center;
-   justify-content: center;
-   min-height: 100vh;
+   min-height: auto;
    text-align: center;
+   padding-top: 50px;
+   padding-bottom: 60px;
+   width: 100%;
 }
 
 /* Center Welcome Text & Button */
@@ -22,14 +24,15 @@ body {
    padding: 30px;
    border-radius: 8px;
    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-   width: 90%;
-   max-width: 400px;
+   width: 95%;
+   max-width: 600px;
    text-align: center;
 }
 
 .welcome-container h1 {
-   font-size: 24px;
-   margin-bottom: 15px;
+   font-size: 28px;
+   margin-top: 0;
+   margin-bottom: 20px;
 }
 
 /* Login Button */
@@ -37,8 +40,8 @@ body {
    background-color: #007bff;
    color: white;
    border: none;
-   padding: 12px 20px;
-   font-size: 16px;
+   padding: 15px 30px;
+   font-size: 18px;
    border-radius: 5px;
    cursor: pointer;
    transition: background 0.3s ease;
@@ -50,9 +53,9 @@ body {
 
 /* Centered Message Below */
 .login-message {
-   font-size: 16px;
+   font-size: 18px;
    color: #333;
-   margin-top: 15px;
+   margin-top: 20px;
 }
 
 /* ... your existing styles remain ... */
@@ -88,5 +91,7 @@ body {
 
 /* Fix layout shift due to fixed bottom bar */
 .main-content {
-   padding-bottom: 60px;
+   padding-bottom: 50px;
+   max-width: 600px;
+   width: 95%;
 }

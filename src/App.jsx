@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
 import { FaHome, FaShareAlt, FaCommentDots, FaHeart, FaUser, FaQuestion, FaCog } from "react-icons/fa";
+import { auth } from "./firebase";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import Register from "./components/Register";
@@ -9,8 +10,8 @@ import AddQuestion from "./components/AddQuestion";
 import ReviewQuestion from "./components/ReviewQuestion";
 import BuildProfile from "./components/BuildProfile";
 import Settings from "./components/Settings";
-import AdminDashboard from "./components/AdminDashboard";   // ✅ Added import
-import UserDashboard from "./components/UserDashboard";     // ✅ Added import
+import AdminDashboard from "./components/AdminDashboard";
+import UserDashboard from "./components/UserDashboard";
 import "./App.css";
 
 // Bottom Navigation Component
@@ -31,6 +32,16 @@ const BottomNav = () => {
 };
 
 function App() {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+            setUser(currentUser);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
     return (
         <Router>
             <div className="app-container">
@@ -48,7 +59,7 @@ function App() {
                     <Route path="/admin-dashboard" element={<AdminDashboard />} />
                     <Route path="/user-dashboard" element={<UserDashboard />} />
                 </Routes>
-                <BottomNav />
+                {user && <BottomNav />}
             </div>
         </Router>
     );
