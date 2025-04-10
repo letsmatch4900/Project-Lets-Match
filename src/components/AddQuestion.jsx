@@ -65,15 +65,6 @@ const AddQuestion = () => {
         alert("Question added successfully!");
     };
 
-    // Navigate back based on user role
-    const handleBack = () => {
-        if (userRole === "admin") {
-            navigate("/admin-dashboard");
-        } else {
-            navigate("/user-dashboard");
-        }
-    };
-
     // Return the proper icon for question status
     const getStatusIcon = (status) => {
         switch (status) {
@@ -88,18 +79,13 @@ const AddQuestion = () => {
 
     return (
         <div className="add-question-container">
-            {/* Back button */}
-            <button onClick={handleBack} className="back-button">
-                ← Back to Dashboard
-            </button>
-
             <h2>Add a Question</h2>
 
             {/* Show submitted questions */}
             {loading ? (
                 <p>Loading your submitted questions...</p>
             ) : userQuestions.length === 0 ? (
-                <p>You haven’t submitted any questions yet.</p>
+                <p>You haven't submitted any questions yet.</p>
             ) : (
                 <div className="question-list">
                     {userQuestions.map((q, index) => (

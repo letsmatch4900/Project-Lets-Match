@@ -58,3 +58,18 @@ button:hover {
     margin-top: 10px;
     background-color: #6c757d;
 }
+
+.log-out-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.log-out-btn:hover {
+    background-color: #0056b3;
+}

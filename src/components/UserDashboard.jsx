@@ -3,6 +3,7 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { FaHome, FaShareAlt, FaCommentDots, FaHeart, FaUser, FaQuestion, FaCog } from "react-icons/fa";
 import "./UserDashboard.css";
 
 const UserDashboard = () => {
@@ -48,13 +49,7 @@ const UserDashboard = () => {
             <div className="top-bar">
                 <h1>Let's Match!</h1>
                 <div className="top-right">
-                    <span>Welcome {userData?.name || "User"}</span>
-                    <button onClick={handleSignOut} className="log-out-btn">
-                        Log Out
-                    </button>
-                    <button className="settings-btn" onClick= {() => navigate("/settings")}>
-                        Settings
-                    </button>
+                    <FaUser className="user-icon" onClick={() => navigate("/build-profile")} />
                 </div>
             </div>
 
@@ -65,18 +60,18 @@ const UserDashboard = () => {
 
                 {/* Category Button and Sub-options */}
                 <div className="category-section">
-                        <button onClick={toggleCategory} className="option-btn">
-                            Category
+                    <button onClick={toggleCategory} className="option-btn">
+                        Category
+                    </button>
+                    <div className={`sub-options ${isCategoryOpen ? "open" : ""}`}>
+                        <button className="sub-option-btn" onClick={() => navigate("/dating")}>
+                            Dating
                         </button>
-                        <div className={`sub-options ${isCategoryOpen ? "open" : ""}`}>
-                            <button className="sub-option-btn" onClick={() => navigate("/dating")}>
-                                Dating
-                            </button>
-                            <button className="sub-option-btn" onClick={() => navigate("/jobs")}>
-                                Jobs
-                            </button>
-                        </div>
+                        <button className="sub-option-btn" onClick={() => navigate("/jobs")}>
+                            Jobs
+                        </button>
                     </div>
+                </div>
 
                 {/* User Specific Buttons */}
                 <div className="user-options">
@@ -96,12 +91,6 @@ const UserDashboard = () => {
                         Share
                     </button>
                 </div>
-            </div>
-
-            {/* Footer Navigation */}
-            <div className="footer-nav">
-                <button onClick={() => navigate("/home")}>Home</button>
-                <button onClick={() => navigate("/about")}>About</button>
             </div>
         </div>
     );

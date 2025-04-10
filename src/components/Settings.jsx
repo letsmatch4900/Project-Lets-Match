@@ -5,7 +5,7 @@ import { auth } from "../firebase";
 // reauthenticateWithCredential() - Verifies the user's identity using their current password
 // updatePassword() - updates the password after successful reauthentication
 // EmailAuthProvider.credential() - Creates a credential (email + password) to verify the user.
-import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut } from "firebase/auth";
 
 // useNavigate() - Used for navigation, allowing us to redirect users.
 import { useNavigate } from "react-router-dom";
@@ -23,7 +23,7 @@ const Settings = () => {
     //confirmNewPassword → Stores the confirmation of the new password.
     //error → Stores error messages to show if something goes wrong.
     //message → Stores success messages when the password is updated.
-    //navigate → Handles redirections (e.g., if the user isn’t logged in).
+    //navigate → Handles redirections (e.g., if the user isn't logged in).
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -72,6 +72,16 @@ const Settings = () => {
         }
     };
 
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            navigate("/");  // Redirect to homepage after logout
+        } catch (error) {
+            console.error("Error signing out:", error);
+            setError("Error signing out. Please try again.");
+        }
+    };
+
     return (
         <div className="settings-container">
             <h2>Account Settings</h2>
@@ -112,8 +122,8 @@ const Settings = () => {
                 <button type="submit">Change Password</button>
             </form>
 
-            <button className="back-button" onClick={() => navigate("/")}>
-                Back to Home
+            <button onClick={handleSignOut} className="log-out-btn">
+                Log Out
             </button>
         </div>
     );
