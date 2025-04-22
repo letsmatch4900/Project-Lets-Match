@@ -62,7 +62,7 @@ export default function AddQuestion() {
           required
         />
 
-        <label>Select a score from 0 to 10 (step 0.5):</label>
+        <label>Select a score from 0 to 10 </label>
         <input
           type="range"
           min="0"
