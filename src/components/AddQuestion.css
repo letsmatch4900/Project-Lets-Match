@@ -9,18 +9,18 @@
     background-color: #ffffff;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Heading */
-.add-question-container h2 {
+  }
+  
+  /* Heading */
+  .add-question-container h2 {
     color: #222;
     font-size: 22px;
     margin-top: 0;
     margin-bottom: 20px;
-}
-
-/* Input field */
-.add-question-container input {
+  }
+  
+  /* Input field */
+  .add-question-container input[type="text"] {
     width: 100%;
     padding: 10px;
     margin-bottom: 12px;
@@ -28,10 +28,18 @@
     border-radius: 6px;
     font-size: 15px;
     box-sizing: border-box;
-}
-
-/* Buttons (submit & back) */
-.add-question-container button {
+  }
+  
+  /* Slider style */
+  .preview-slider {
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    accent-color: #007bff;
+  }
+  
+  /* Buttons (submit & back) */
+  .add-question-container button {
     background-color: #007bff;
     color: white;
     padding: 10px 15px;
@@ -43,39 +51,64 @@
     transition: background-color 0.3s ease;
     margin-top: 8px;
     width: 100%;
-}
-
-.add-question-container button:hover {
+  }
+  
+  .add-question-container button:hover {
     background-color: #0056b3;
-}
-
-/* Back button style specifically */
-.back-button {
-    margin-bottom: 15px;
-    font-weight: bold;
-}
-
-/* Submitted question list section */
-.question-list {
+  }
+  
+  /* Submitted question list section */
+  .question-list {
     text-align: left;
-    margin-bottom: 15px;
-}
-
-.question-item {
+    margin-top: 30px;
+  }
+  
+  .question-list h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  
+  /* Each question box */
+  .question-item {
     background-color: #f1f4f8;
     border: 1px solid #ccc;
-    padding: 10px;
+    padding: 12px;
     border-radius: 8px;
     margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     font-size: 15px;
     color: #333;
-}
-
-/* Status emoji icon */
-.status-icon {
-    font-size: 1.2rem;
-    margin-left: 10px;
-}
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .score-indicator-line {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 0 5px;
+    font-size: 14px;
+    user-select: none;
+  }
+  
+  .score-label {
+    cursor: pointer;
+    padding: 2px 4px;
+    min-width: 20px;
+    text-align: center;
+    transition: color 0.2s;
+  }
+  
+  .score-label:hover {
+    font-weight: bold;
+    color: #007bff;
+  }
+  
+  .score-label.active {
+    color: #fff;
+    background-color: #007bff;
+    border-radius: 4px;
+  }
+  

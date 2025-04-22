@@ -1,128 +1,122 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { addDocument, getUserQuestions } from "../services/firestore";
-import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import { getAuth } from "firebase/auth";
+import { db } from "../firebase";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  query,
+  orderBy
+} from "firebase/firestore";
 import "./AddQuestion.css";
 
-const AddQuestion = () => {
-    const [question, setQuestion] = useState("");
-    const [userQuestions, setUserQuestions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [userRole, setUserRole] = useState(null);
-    const navigate = useNavigate();
+export default function AddQuestion() {
+  const user = getAuth().currentUser;
+  const [question, setQuestion] = useState("");
+  const [selectedScore, setSelectedScore] = useState(null);
+  const [labelInput, setLabelInput] = useState("");
+  const [questionsList, setQuestionsList] = useState([]);
 
-    // Fetch the user's role (admin/user)
-    const fetchUserRole = async (user) => {
-        if (!user) return;
+  useEffect(() => {
+    const q = query(collection(db, "questions"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const questions = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((item) => item.question && item.label);
+      setQuestionsList(questions);
+    });
+    return () => unsubscribe();
+  }, []);
 
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            setUserRole(docSnap.data().role);
-        } else {
-            console.warn("User role not found.");
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, "questions"), {
+        question,
+        score: selectedScore,
+        label: labelInput,
+        status: "pending",
+        submittedBy: user.uid,
+        createdAt: serverTimestamp(),
+      });
+      setQuestion("");
+      setSelectedScore(null);
+      setLabelInput("");
+    } catch (error) {
+      console.error("Error adding question:", error);
+      alert("Failed to submit question.");
+    }
+  };
 
-    // Fetch all questions submitted by the current user
-    const fetchUserQuestions = async (user) => {
-        if (!user) return;
+  return (
+    <div className="add-question-container">
+      <h2>Add a New Question</h2>
+      <form onSubmit={handleSubmit}>
+        <label>Question:</label>
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Enter your question"
+          required
+        />
 
-        try {
-            const questions = await getUserQuestions(user.uid);
-            setUserQuestions(questions || []);
-        } catch (error) {
-            console.error("Error fetching user questions:", error);
-            setUserQuestions([]);
-        }
-        setLoading(false);
-    };
+        <label>Select a score from 0 to 10 (step 0.5):</label>
+        <input
+          type="range"
+          min="0"
+          max="10"
+          step="0.5"
+          value={selectedScore || 0}
+          onChange={(e) => setSelectedScore(parseFloat(e.target.value))}
+          className="preview-slider"
+        />
 
-    useEffect(() => {
-        // Listen for auth state changes
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (!user) {
-                navigate("/login");
-                return;
-            }
-            
-            setLoading(true);
-            fetchUserRole(user);
-            fetchUserQuestions(user);
-        });
-
-        // Clean up the listener when component unmounts
-        return () => unsubscribe();
-    }, [navigate]);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!question.trim()) return;
-
-        const user = auth.currentUser;
-        if (!user) {
-            navigate("/login");
-            return;
-        }
-
-        await addDocument("questions", {
-            text: question,
-            status: "pending",
-            submittedBy: user.uid,
-            createdAt: new Date()
-        });
-
-        setQuestion("");
-        fetchUserQuestions(user); // Refresh the list after submission
-        alert("Question added successfully!");
-    };
-
-    // Return the proper icon for question status
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case "approved":
-                return "✅";
-            case "rejected":
-                return "❌";
-            default:
-                return "🕒";
-        }
-    };
-
-    return (
-        <div className="add-question-container">
-            <h2>Add a Question</h2>
-
-            {/* Show submitted questions */}
-            {loading ? (
-                <p>Loading your submitted questions...</p>
-            ) : userQuestions.length === 0 ? (
-                <p>You haven't submitted any questions yet.</p>
-            ) : (
-                <div className="question-list">
-                    {userQuestions.map((q, index) => (
-                        <div key={index} className="question-item">
-                            {q.text}
-                            <span className="status-icon">{getStatusIcon(q.status)}</span>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Form to submit new question */}
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Enter your question"
-                    required
-                />
-                <button type="submit">Submit Question</button>
-            </form>
+        <div className="score-indicator-line">
+          {[...Array(11)].map((_, i) => (
+            <div
+              key={i}
+              className={`score-label ${selectedScore === i ? "active" : ""}`}
+              onClick={() => setSelectedScore(i)}
+            >
+              {i}
+            </div>
+          ))}
         </div>
-    );
-};
 
-export default AddQuestion;
+        <p>Selected Score: {selectedScore !== null ? selectedScore : "None"}</p>
+
+        {selectedScore !== null && (
+          <div className="slider-label-input">
+            <label>Label for score {selectedScore}:</label>
+            <input
+              type="text"
+              value={labelInput}
+              onChange={(e) => setLabelInput(e.target.value)}
+              placeholder={`Label for ${selectedScore}`}
+              required
+            />
+          </div>
+        )}
+
+        <button type="submit">Submit Question</button>
+      </form>
+
+      <div className="question-list">
+        <h3>Submitted Questions</h3>
+        {questionsList.length > 0 ? (
+          questionsList.map((item) => (
+            <div key={item.id} className="question-item">
+              <p><strong>Q:</strong> {item.question}</p>
+              <p><strong>Score:</strong> {item.score}</p>
+              <p><strong>Label:</strong> {item.label}</p>
+            </div>
+          ))
+        ) : (
+          <p>No questions submitted yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
