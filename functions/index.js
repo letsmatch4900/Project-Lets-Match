@@ -14,5 +14,7 @@
 // https://firebase.google.com/docs/functions/get-started
 
 const dailyQuestionCount = require("./dailyQuestionCount");
+const userMatching = require("./userMatching");
 
 exports.dailyQuestionCount = dailyQuestionCount;
+exports.userMatching = userMatching;
