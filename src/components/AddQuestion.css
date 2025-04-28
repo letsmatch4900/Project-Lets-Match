@@ -1,114 +1,293 @@
-/* Container styling */
+/* Container */
 .add-question-container {
-    width: 100%;
-    max-width: 550px;
-    margin: 20px auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    background-color: #ffffff;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Heading */
-  .add-question-container h2 {
-    color: #222;
-    font-size: 22px;
-    margin-top: 0;
-    margin-bottom: 20px;
-  }
-  
-  /* Input field */
-  .add-question-container input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 15px;
-    box-sizing: border-box;
-  }
-  
-  /* Slider style */
-  .preview-slider {
-    width: 100%;
-    margin-top: 10px;
-    margin-bottom: 5px;
-    accent-color: #007bff;
-  }
-  
-  /* Buttons (submit & back) */
-  .add-question-container button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 6px;
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 8px;
-    width: 100%;
-  }
-  
-  .add-question-container button:hover {
-    background-color: #0056b3;
-  }
-  
-  /* Submitted question list section */
-  .question-list {
-    text-align: left;
-    margin-top: 30px;
-  }
-  
-  .question-list h3 {
-    font-size: 18px;
-    margin-bottom: 12px;
-  }
-  
-  /* Each question box */
-  .question-item {
-    background-color: #f1f4f8;
-    border: 1px solid #ccc;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    font-size: 15px;
-    color: #333;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .score-indicator-line {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
-    padding: 0 5px;
-    font-size: 14px;
-    user-select: none;
-  }
-  
-  .score-label {
-    cursor: pointer;
-    padding: 2px 4px;
-    min-width: 20px;
-    text-align: center;
-    transition: color 0.2s;
-  }
-  
-  .score-label:hover {
-    font-weight: bold;
-    color: #007bff;
-  }
-  
-  .score-label.active {
-    color: #fff;
-    background-color: #007bff;
-    border-radius: 4px;
-  }
-  
+  width: 100%;
+  max-width: 600px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.add-question-container h2 {
+  margin-bottom: 20px;
+}
+
+/* Text Inputs */
+.add-question-container input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+/* Label Inputs Section */
+.label-inputs {
+  margin-top: 20px;
+  text-align: left;
+}
+.label-input {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.label-input label {
+  width: 50px;
+  font-weight: bold;
+  text-align: right;
+  margin-right: 10px;
+}
+.label-input input {
+  flex: 1;
+}
+
+/* Preview Box */
+.preview-container {
+  margin-top: 25px;
+  text-align: center;
+}
+.slider-box {
+  background: #f1f5fb;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+/* Range Slider */
+.slider-box.blue-theme input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #d0e2ff;
+  border-radius: 3px;
+  margin: 0;
+  padding: 0;
+  outline: none;
+}
+.slider-box.blue-theme input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -7px;
+  transition: transform 0.2s ease;
+}
+.slider-box.blue-theme input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+.slider-box.blue-theme input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.slider-box.blue-theme input[type="range"]::-webkit-slider-runnable-track {
+  background: #d0e2ff;
+  border-radius: 3px;
+}
+.slider-box.blue-theme input[type="range"]::-moz-range-track {
+  background: #d0e2ff;
+  border-radius: 3px;
+}
+
+/* Numbers Under Slider */
+.slider-numbers {
+  position: relative;
+  height: 24px;
+  margin-top: 10px;
+}
+.slider-numbers span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-weight: bold;
+  font-size: 14px;
+}
+.slider-numbers span:nth-child(1) { left: 0%; }
+.slider-numbers span:nth-child(2) { left: 25%; }
+.slider-numbers span:nth-child(3) { left: 50%; }
+.slider-numbers span:nth-child(4) { left: 75%; }
+.slider-numbers span:nth-child(5) { left: 100%; }
+
+/* Label Texts Under Slider */
+.slider-text-labels {
+  position: relative;
+  height: 24px;
+  margin-top: 5px;
+}
+.slider-text-labels span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #555;
+}
+.slider-text-labels span:nth-child(1) { left: 0%; }
+.slider-text-labels span:nth-child(2) { left: 25%; }
+.slider-text-labels span:nth-child(3) { left: 50%; }
+.slider-text-labels span:nth-child(4) { left: 75%; }
+.slider-text-labels span:nth-child(5) { left: 100%; }
+
+/* Selected Score Text */
+.selected-score {
+  font-size: 13px;
+  color: #666;
+  margin-top: 8px;
+}
+
+/* Status Line */
+.status-row {
+  font-weight: bold;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* Submit Button */
+.submit-button {
+  background-color: #0056b3;
+  color: white;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  width: 100%;
+  margin-top: 15px;
+  cursor: pointer;
+}
+.submit-button:hover {
+  background-color: #003d80;
+}
+
+/* Button Group for Edit/Delete */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  justify-content: space-between;
+}
+
+.button-group .edit-button,
+.button-group .delete-button {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Edit Button */
+.edit-button {
+  background-color: #007bff;
+  color: white;
+}
+.edit-button:hover {
+  background-color: #0056b3;
+}
+
+/* Delete Button */
+.delete-button {
+  background-color: #dc3545;
+  color: white;
+}
+.delete-button:hover {
+  background-color: #a71d2a;
+}
+
+/* Question List */
+.question-list {
+  margin-top: 40px;
+  text-align: left;
+}
+
+.question-item {
+  background-color: #eef2f7;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+/* (everything you already have) */
+
+/* ... existing styles ... */
+
+/* +++ New popup styles +++ */
+.edit-popup {
+  background: white;
+  border: 2px solid #007bff;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px auto;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.edit-field {
+  margin-bottom: 20px;
+}
+
+.edit-labels {
+  margin-bottom: 20px;
+}
+
+.edit-label-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.edit-label-item label {
+  width: 40px;
+  font-weight: bold;
+}
+
+.edit-label-item input {
+  flex: 1;
+  padding: 6px;
+  font-size: 14px;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.save-button, .cancel-button {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  border: none;
+}
+
+.save-button {
+  background-color: #28a745;
+  color: white;
+}
+.save-button:hover {
+  background-color: #218838;
+}
+
+.cancel-button {
+  background-color: #dc3545;
+  color: white;
+}
+.cancel-button:hover {
+  background-color: #c82333;
+}
+.edit-label-input {
+  width: 18%;
+  padding: 6px;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-top: 8px;
+}
