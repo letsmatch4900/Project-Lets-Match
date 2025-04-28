@@ -1,0 +1,94 @@
+.matches-page {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.admin-view {
+  display: flex;
+}
+
+.search-section {
+  width: 30%;
+  margin-right: 20px;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.user-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.user-item {
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.user-item:hover, .user-item.selected {
+  background-color: #f0f0f0;
+}
+
+.matches-section {
+  flex-grow: 1;
+}
+
+.scrollable-matches {
+  display: flex;
+}
+
+.selected-user {
+  width: 40%;
+  margin-right: 20px;
+}
+
+.matches-list {
+  width: 60%;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.match-item {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.contact-info {
+  margin-top: 10px;
+  padding-left: 10px;
+  border-left: 2px solid #007bff;
+}
+
+.user-view {
+  width: 100%;
+}
+
+button {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* Small text under bottom icons */
+.bottom-nav-icon-text {
+  font-size: 10px;
+  display: block;
+  text-align: center;
+  margin-top: 2px;
+}
