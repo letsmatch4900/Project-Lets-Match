@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../Firebase'; // assuming you have Firebase setup
+import { db } from '../firebase'; // assuming you have Firebase setup
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext'; // your auth context
 import './MatchesPage.css';
