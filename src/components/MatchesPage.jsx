@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase'; 
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom'; // for bottom nav clicks
+import { db } from '../firebase'; // Adjust path if needed
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { FaSearch, FaUser, FaHeart, FaCog, FaHome, FaPlus } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom'; // For navigation
 import './MatchesPage.css';
+
+const MAX_MATCHES_DISPLAYED = 10;
 
 const MatchesPage = ({ currentUser, userRole }) => {
   const [matches, setMatches] = useState([]);
@@ -15,6 +18,7 @@ const MatchesPage = ({ currentUser, userRole }) => {
 
   useEffect(() => {
     if (!currentUser) return;
+
     if (userRole === 'admin') {
       fetchAllUsers();
     } else {
@@ -22,131 +26,142 @@ const MatchesPage = ({ currentUser, userRole }) => {
     }
   }, [currentUser, userRole]);
 
-  const fetchUserMatches = async (userId) => {
+  const fetchUserMatches = async (uid) => {
     try {
       const matchesRef = collection(db, 'matches');
-      const q = query(matchesRef, where('userId', '==', userId));
+      const q = query(matchesRef, where('userId', '==', uid));
       const querySnapshot = await getDocs(q);
-      const matchesList = querySnapshot.docs.map(doc => doc.data());
-      const sortedMatches = matchesList.sort((a, b) => b.score - a.score);
-      setMatches(sortedMatches.slice(0, 10));
+      const matchList = [];
+
+      querySnapshot.forEach((doc) => {
+        matchList.push(doc.data());
+      });
+
+      matchList.sort((a, b) => b.score - a.score); // Highest score first
+      setMatches(matchList.slice(0, MAX_MATCHES_DISPLAYED));
     } catch (error) {
-      console.error('Error fetching user matches:', error);
+      console.error('Error fetching matches:', error);
     }
   };
 
   const fetchAllUsers = async () => {
     try {
       const usersRef = collection(db, 'users');
-      const snapshot = await getDocs(usersRef);
-      const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setUsers(usersList);
+      const querySnapshot = await getDocs(usersRef);
+      const userList = [];
+
+      querySnapshot.forEach((doc) => {
+        userList.push({ id: doc.id, ...doc.data() });
+      });
+
+      setUsers(userList);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
   };
 
-  const handleUserSelect = async (userId) => {
-    setSelectedUserId(userId);
+  const fetchSelectedUserMatches = async (userId) => {
     try {
       const matchesRef = collection(db, 'matches');
       const q = query(matchesRef, where('userId', '==', userId));
       const querySnapshot = await getDocs(q);
-      const matchesList = querySnapshot.docs.map(doc => doc.data());
-      const sortedMatches = matchesList.sort((a, b) => b.score - a.score);
-      setSelectedUserMatches(sortedMatches);
+      const matchList = [];
+
+      querySnapshot.forEach((doc) => {
+        matchList.push(doc.data());
+      });
+
+      matchList.sort((a, b) => b.score - a.score);
+      setSelectedUserMatches(matchList);
     } catch (error) {
       console.error('Error fetching selected user matches:', error);
     }
   };
 
-  const toggleContactInfo = (matchId) => {
-    setShowContactInfo(prev => ({
+  const handleToggleContact = (matchId) => {
+    setShowContactInfo((prev) => ({
       ...prev,
-      [matchId]: !prev[matchId]
+      [matchId]: !prev[matchId],
     }));
   };
 
-  const renderMatches = (matchList) => (
-    <ul className="matches-list">
-      {matchList.map((match, index) => (
-        <li key={match.matchId || index} className="match-item">
-          <span>{match.matchName}</span>
-          <button className="contact-button" onClick={() => toggleContactInfo(match.matchId || index)}>
-            {showContactInfo[match.matchId || index] ? 'Hide Contact' : 'Show Contact'}
-          </button>
-          {showContactInfo[match.matchId || index] && (
-            <div className="contact-info">
-              <p>{match.contactInfo || 'No contact info available'}</p>
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
+  const handleSearchSelect = (userId) => {
+    setSelectedUserId(userId);
+    fetchSelectedUserMatches(userId);
+  };
 
   return (
     <div className="matches-page">
-      <h1>Matches</h1>
+      <h2>Matches</h2>
 
-      {userRole === 'admin' ? (
-        <>
+      {userRole === 'admin' && (
+        <div className="admin-search">
           <input
             type="text"
-            placeholder="Search users by name or email..."
-            className="search-bar"
+            placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-
-          <ul className="users-list">
+          <div className="user-list">
             {users
-              .filter(user => 
-                user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+              .filter((user) =>
+                `${user.firstName} ${user.lastName} ${user.email}`
+                  .toLowerCase()
+                  .includes(searchTerm.toLowerCase())
               )
-              .map(user => (
-                <li key={user.id} className="user-item">
-                  <span>{user.firstName} {user.lastName}</span>
-                  <button onClick={() => handleUserSelect(user.id)}>View Matches</button>
-                </li>
+              .map((user) => (
+                <div
+                  key={user.id}
+                  className="user-card"
+                  onClick={() => handleSearchSelect(user.id)}
+                >
+                  {user.firstName} {user.lastName}
+                </div>
               ))}
-          </ul>
-
-          {selectedUserId && (
-            <>
-              <h2>Matches for Selected User</h2>
-              {renderMatches(selectedUserMatches)}
-            </>
-          )}
-        </>
-      ) : (
-        <>
-          <h2>Your Top Matches</h2>
-          {renderMatches(matches)}
-        </>
+          </div>
+        </div>
       )}
 
-      <nav className="bottom-nav">
+      <div className="match-list">
+        {(userRole === 'admin' && selectedUserId ? selectedUserMatches : matches).map((match, idx) => (
+          <div key={idx} className="match-card">
+            <div className="match-name">{match.matchName}</div>
+            <button onClick={() => handleToggleContact(match.matchId)}>
+              {showContactInfo[match.matchId] ? 'Hide Contact' : 'View Contact'}
+            </button>
+            {showContactInfo[match.matchId] && (
+              <div className="contact-info">
+                {match.contactInfo || 'No contact info shared'}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* FAB */}
+      <button className="fab-button" onClick={() => navigate('/add')}>
+        <FaPlus />
+      </button>
+
+      {/* Bottom Navigation */}
+      <div className="bottom-nav">
         <div onClick={() => navigate('/home')}>
-          <span>🏠</span>
-          <p>Home</p>
+          <FaHome />
+          <div className="nav-label">Home</div>
         </div>
         <div onClick={() => navigate('/matches')}>
-          <span>❤️</span>
-          <p>Matches</p>
-        </div>
-        <div onClick={() => navigate('/messages')}>
-          <span>💬</span>
-          <p>Messages</p>
+          <FaHeart />
+          <div className="nav-label">Matches</div>
         </div>
         <div onClick={() => navigate('/profile')}>
-          <span>👤</span>
-          <p>Profile</p>
+          <FaUser />
+          <div className="nav-label">Profile</div>
         </div>
-      </nav>
+        <div onClick={() => navigate('/settings')}>
+          <FaCog />
+          <div className="nav-label">Settings</div>
+        </div>
+      </div>
     </div>
   );
 };
