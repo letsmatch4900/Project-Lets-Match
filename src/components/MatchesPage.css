@@ -1,28 +1,37 @@
 .matches-page {
-  padding: 20px;
+  padding: 16px;
   font-family: Arial, sans-serif;
+  max-width: 900px;
+  margin: auto;
 }
 
-.admin-view {
+.user-view, .admin-view {
   display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .search-section {
-  width: 30%;
-  margin-right: 20px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
 }
 
 .search-bar {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  margin-bottom: 12px;
 }
 
 .user-list {
-  max-height: 400px;
+  max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #ccc;
-  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  background-color: #f9f9f9;
 }
 
 .user-item {
@@ -31,64 +40,66 @@
   border-bottom: 1px solid #eee;
 }
 
-.user-item:hover, .user-item.selected {
-  background-color: #f0f0f0;
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-item:hover {
+  background-color: #eaeaea;
+}
+
+.user-item.selected {
+  background-color: #d6eaff;
+  font-weight: bold;
 }
 
 .matches-section {
-  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .scrollable-matches {
-  display: flex;
-}
-
-.selected-user {
-  width: 40%;
-  margin-right: 20px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .matches-list {
-  width: 60%;
-  overflow-y: auto;
-  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .match-item {
-  margin-bottom: 20px;
-  padding: 10px;
-  border: 1px solid #ddd;
+  padding: 12px;
+  border: 1px solid #ccc;
   border-radius: 8px;
+  background-color: #fafafa;
 }
 
-.contact-info {
-  margin-top: 10px;
-  padding-left: 10px;
-  border-left: 2px solid #007bff;
-}
-
-.user-view {
-  width: 100%;
+.match-item h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
 }
 
 button {
-  margin-top: 10px;
-  padding: 6px 12px;
-  border: none;
   background-color: #007bff;
   color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
   cursor: pointer;
-  border-radius: 5px;
+  font-size: 14px;
 }
 
 button:hover {
   background-color: #0056b3;
 }
 
-/* Small text under bottom icons */
-.bottom-nav-icon-text {
-  font-size: 10px;
-  display: block;
-  text-align: center;
-  margin-top: 2px;
+.contact-info {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #ddd;
+  font-size: 14px;
 }
