@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../firebase"; 
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../Firebase";
+import { auth } from "../firebase";
 import "./Matches.css"; 
 
 const Matches = () => {
