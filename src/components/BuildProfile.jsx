@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 import { FaPencilAlt } from "react-icons/fa";
+import ProfileQuestions from "./ProfileQuestions";
 import "./BuildProfile.css";
 
 const BuildProfile = () => {
@@ -26,6 +27,7 @@ const BuildProfile = () => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
+    const [userId, setUserId] = useState(null);
 
     useEffect(() => {
         const fetchProfile = async (user) => {
@@ -33,6 +35,8 @@ const BuildProfile = () => {
                 if (!user) {
                     return;
                 }
+
+                setUserId(user.uid);
 
                 const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
@@ -146,8 +150,14 @@ const BuildProfile = () => {
                 }
             }
 
-            // Update profile data in Firestore
+            // Get current user data to preserve existing fields
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+            const existingData = userDoc.exists() ? userDoc.data() : {};
+            
+            // Update profile data in Firestore while preserving other fields
             await setDoc(doc(db, "users", user.uid), {
+                ...existingData,
                 fullName: profile.fullName,
                 nickName: profile.nickName,
                 gender: profile.gender,
@@ -310,6 +320,8 @@ const BuildProfile = () => {
                     Save Profile
                 </button>
             </form>
+            
+            {userId && <ProfileQuestions userId={userId} />}
         </div>
     );
 };
