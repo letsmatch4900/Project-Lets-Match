@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { db } from '../firebase'; // Make sure your Firebase is initialized here
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase'; // Your Firebase initialization
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { AuthContext } from '../context/AuthContext'; // <-- Correct way
 import './MatchesPage.css';
 
-const MatchesPage = () => {
-  const { currentUser, userRole } = useContext(AuthContext); // <-- using context properly
+const MatchesPage = ({ currentUser, userRole }) => { // <-- passed as props
   const [matches, setMatches] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
