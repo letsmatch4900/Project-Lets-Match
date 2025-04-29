@@ -1,145 +1,156 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase'; // Your Firebase initialization
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db, auth } from '../firebase'; // make sure you export db and auth from firebase.js
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import './MatchesPage.css';
 
-const MatchesPage = ({ currentUser, userRole }) => { // <-- passed as props
+const MAX_MATCHES_DISPLAYED = 10;
+
+const MatchesPage = () => {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('user'); // default to user
   const [matches, setMatches] = useState([]);
   const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [selectedUserMatches, setSelectedUserMatches] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showContacts, setShowContacts] = useState({});
 
   useEffect(() => {
-    if (!currentUser) return;
-    if (userRole === 'admin') {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role || 'user');
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && userRole === 'admin') {
       fetchAllUsers();
-    } else {
+    } else if (currentUser) {
       fetchUserMatches(currentUser.uid);
     }
-  }, [userRole, currentUser]);
-
-  const fetchAllUsers = async () => {
-    const usersRef = collection(db, 'users');
-    const snapshot = await getDocs(usersRef);
-    const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setUsers(usersData);
-  };
+  }, [currentUser, userRole]);
 
   const fetchUserMatches = async (userId) => {
-    const matchesRef = collection(db, 'matches');
-    const q = query(matchesRef, where('userId', '==', userId));
-    const snapshot = await getDocs(q);
-    const matchesData = snapshot.docs.map(doc => doc.data());
-    matchesData.sort((a, b) => b.score - a.score);
-    setMatches(matchesData.slice(0, 10)); // Top 10 matches
+    try {
+      const userMatchesRef = collection(db, 'matches');
+      const q = query(userMatchesRef, where('userId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      const matchesData = querySnapshot.docs.map(doc => doc.data());
+      setMatches(matchesData.sort((a, b) => b.score - a.score).slice(0, MAX_MATCHES_DISPLAYED));
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+    }
   };
 
-  const handleSelectUser = async (userId) => {
-    setSelectedUserId(userId);
-    const matchesRef = collection(db, 'matches');
-    const q = query(matchesRef, where('userId', '==', userId));
-    const snapshot = await getDocs(q);
-    const matchesData = snapshot.docs.map(doc => doc.data());
-    matchesData.sort((a, b) => b.score - a.score);
-    setSelectedUserMatches(matchesData);
+  const fetchAllUsers = async () => {
+    try {
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      setUsers(usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
   };
 
-  const toggleContactInfo = (matchId) => {
-    setShowContacts(prev => ({
-      ...prev,
-      [matchId]: !prev[matchId]
-    }));
+  const fetchSelectedUserMatches = async (userId) => {
+    try {
+      const userMatchesRef = collection(db, 'matches');
+      const q = query(userMatchesRef, where('userId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      const matchesData = querySnapshot.docs.map(doc => doc.data());
+      setSelectedUserMatches(matchesData.sort((a, b) => b.score - a.score));
+    } catch (error) {
+      console.error('Error fetching selected user matches:', error);
+    }
   };
 
-  const filteredUsers = users.filter(user => 
-    user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleUserSelect = (userId) => {
+    setSelectedUser(userId);
+    fetchSelectedUserMatches(userId);
+  };
+
+  const toggleContact = (matchId) => {
+    setShowContacts(prev => ({ ...prev, [matchId]: !prev[matchId] }));
+  };
 
   return (
     <div className="matches-page">
-      <h1>{userRole === 'admin' ? 'Admin - View Matches' : 'My Matches'}</h1>
+      <h1>Matches</h1>
 
-      {userRole === 'admin' && (
+      {userRole === 'admin' ? (
         <div className="admin-section">
           <input
             type="text"
             placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-bar"
+            className="search-input"
           />
           <div className="user-list">
-            {filteredUsers.map(user => (
-              <button
-                key={user.id}
-                className={`user-button ${selectedUserId === user.id ? 'selected' : ''}`}
-                onClick={() => handleSelectUser(user.id)}
-              >
-                {user.firstName} {user.lastName}
-              </button>
-            ))}
+            {users
+              .filter(user =>
+                `${user.username || ''} ${user.firstName || ''} ${user.lastName || ''} ${user.email || ''}`
+                  .toLowerCase()
+                  .includes(searchTerm.toLowerCase())
+              )
+              .map((user) => (
+                <div key={user.id} className="user-item" onClick={() => handleUserSelect(user.id)}>
+                  {user.username || user.email}
+                </div>
+              ))}
           </div>
-
-          {selectedUserId && (
+          {selectedUser && (
             <div className="matches-list">
-              <h2>Matches for selected user:</h2>
               {selectedUserMatches.map((match, index) => (
                 <div key={index} className="match-card">
-                  <p>{match.matchName}</p>
-                  <button onClick={() => toggleContactInfo(match.matchId)}>
-                    {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
+                  <div>{match.matchName}</div>
+                  <button onClick={() => toggleContact(index)}>
+                    {showContacts[index] ? 'Hide Contact' : 'Show Contact'}
                   </button>
-                  {showContacts[match.matchId] && (
-                    <div className="contact-info">
-                      <p>Email: {match.contactInfo?.email || 'Hidden'}</p>
-                      <p>Phone: {match.contactInfo?.phone || 'Hidden'}</p>
-                    </div>
-                  )}
+                  {showContacts[index] && <div>{match.contactInfo}</div>}
                 </div>
               ))}
             </div>
           )}
         </div>
-      )}
-
-      {userRole !== 'admin' && (
+      ) : (
         <div className="matches-list">
           {matches.map((match, index) => (
             <div key={index} className="match-card">
-              <p>{match.matchName}</p>
-              <button onClick={() => toggleContactInfo(match.matchId)}>
-                {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
+              <div>{match.matchName}</div>
+              <button onClick={() => toggleContact(index)}>
+                {showContacts[index] ? 'Hide Contact' : 'Show Contact'}
               </button>
-              {showContacts[match.matchId] && (
-                <div className="contact-info">
-                  <p>Email: {match.contactInfo?.email || 'Hidden'}</p>
-                  <p>Phone: {match.contactInfo?.phone || 'Hidden'}</p>
-                </div>
-              )}
+              {showContacts[index] && <div>{match.contactInfo}</div>}
             </div>
           ))}
         </div>
       )}
 
-      <nav className="bottom-nav">
-        <a href="/home">
-          <div className="nav-icon">🏠</div>
+      {/* Bottom navigation */}
+      <div className="bottom-nav">
+        <div className="nav-item">
+          <i className="fas fa-home"></i>
           <div className="nav-label">Home</div>
-        </a>
-        <a href="/matches">
-          <div className="nav-icon">❤️</div>
+        </div>
+        <div className="nav-item">
+          <i className="fas fa-heart"></i>
           <div className="nav-label">Matches</div>
-        </a>
-        <a href="/profile">
-          <div className="nav-icon">👤</div>
+        </div>
+        <div className="nav-item">
+          <i className="fas fa-user"></i>
           <div className="nav-label">Profile</div>
-        </a>
-      </nav>
+        </div>
+      </div>
     </div>
   );
 };
