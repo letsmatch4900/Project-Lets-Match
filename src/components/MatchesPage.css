@@ -1,105 +1,88 @@
 .matches-page {
-  padding: 16px;
-  font-family: Arial, sans-serif;
-  max-width: 900px;
-  margin: auto;
+  padding: 1rem;
+  margin-bottom: 4rem; /* Space for bottom nav */
 }
 
-.user-view, .admin-view {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.search-section {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 20px;
+.admin-section {
+  margin-bottom: 2rem;
 }
 
 .search-bar {
-  padding: 8px 12px;
-  font-size: 14px;
-  border-radius: 4px;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
   border: 1px solid #ccc;
-  margin-bottom: 12px;
+  border-radius: 8px;
 }
 
 .user-list {
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 8px;
-  background-color: #f9f9f9;
-}
-
-.user-item {
-  padding: 8px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-}
-
-.user-item:last-child {
-  border-bottom: none;
-}
-
-.user-item:hover {
-  background-color: #eaeaea;
-}
-
-.user-item.selected {
-  background-color: #d6eaff;
-  font-weight: bold;
-}
-
-.matches-section {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.scrollable-matches {
-  max-height: 500px;
-  overflow-y: auto;
-  padding-right: 8px;
+.user-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #888;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.user-button:hover {
+  background-color: #eee;
+}
+
+.user-button.selected {
+  background-color: #d0ebff;
+  border-color: #339af0;
 }
 
 .matches-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  margin-top: 1rem;
 }
 
-.match-item {
-  padding: 12px;
+.match-card {
   border: 1px solid #ccc;
   border-radius: 8px;
-  background-color: #fafafa;
-}
-
-.match-item h3 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-}
-
-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-button:hover {
-  background-color: #0056b3;
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
 .contact-info {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: white;
   border-top: 1px solid #ddd;
-  font-size: 14px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.bottom-nav a {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.7rem;
+}
+
+.nav-icon {
+  font-size: 1.5rem;
+}
+
+.nav-label {
+  font-size: 0.6rem;
+  margin-top: 0.2rem;
 }
