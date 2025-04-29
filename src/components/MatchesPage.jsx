@@ -1,17 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase'; // Make sure your Firebase is initialized here
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext'; // Assuming you have a useAuth hook
+import { auth, db } from '../firebase'; // assuming you initialized auth and db in firebase.js
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import './MatchesPage.css';
 
 const MatchesPage = () => {
-  const { currentUser, userRole } = useAuth();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('user'); // default to 'user'
   const [matches, setMatches] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUserMatches, setSelectedUserMatches] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showContacts, setShowContacts] = useState({});
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+
+        // Fetch user role from Firestore
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('uid', '==', user.uid));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const userData = snapshot.docs[0].data();
+          setUserRole(userData.role || 'user'); // make sure 'role' field exists in your users collection
+        }
+      } else {
+        setCurrentUser(null);
+        setUserRole('user');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
