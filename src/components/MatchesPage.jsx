@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase'; // make sure this file properly exports initialized db
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth } from './firebase';
 import './MatchesPage.css';
 
 const MAX_MATCHES_DISPLAYED = 10;
