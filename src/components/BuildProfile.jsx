@@ -21,6 +21,7 @@ const BuildProfile = () => {
     });
     const [profileImage, setProfileImage] = useState(null);
     const [imageUrl, setImageUrl] = useState("");
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
@@ -81,6 +82,15 @@ const BuildProfile = () => {
         return () => unsubscribe();
     }, [navigate]);
 
+    // Clean up the object URL when component unmounts or when previewUrl changes
+    useEffect(() => {
+        return () => {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setProfile(prev => ({
@@ -95,10 +105,16 @@ const BuildProfile = () => {
 
     const handleImageChange = (e) => {
         if (e.target.files[0]) {
+            // Revoke previous preview URL if exists
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+            
             setProfileImage(e.target.files[0]);
             // Create a preview URL
-            const previewUrl = URL.createObjectURL(e.target.files[0]);
-            setImageUrl(previewUrl);
+            const newPreviewUrl = URL.createObjectURL(e.target.files[0]);
+            setPreviewUrl(newPreviewUrl);
+            setImageUrl(newPreviewUrl);
         }
     };
 
@@ -161,6 +177,7 @@ const BuildProfile = () => {
                 fullName: profile.fullName,
                 nickName: profile.nickName,
                 gender: profile.gender,
+                country: profile.country,
                 language: profile.language,
                 timeZone: profile.timeZone,
                 location: profile.location,
@@ -268,6 +285,16 @@ const BuildProfile = () => {
 
                 <div className="form-row">
                     <div className="form-group">
+                        <label>Country:</label>
+                        <input
+                            type="text"
+                            name="country"
+                            value={profile.country}
+                            onChange={handleChange}
+                            placeholder="Your Country"
+                        />
+                    </div>
+                    <div className="form-group">
                         <label>Language:</label>
                         <select name="language" value={profile.language} onChange={handleChange}>
                             <option value="">Select Language</option>
@@ -279,6 +306,9 @@ const BuildProfile = () => {
                             <option value="other">Other</option>
                         </select>
                     </div>
+                </div>
+
+                <div className="form-row">
                     <div className="form-group">
                         <label>Time Zone:</label>
                         <select name="timeZone" value={profile.timeZone} onChange={handleChange}>
@@ -293,16 +323,15 @@ const BuildProfile = () => {
                             <option value="utc+8">China Standard Time (UTC+8)</option>
                         </select>
                     </div>
-                </div>
-
-                <div className="form-group">
-                    <label>My email Address:</label>
-                    <input
-                        type="email"
-                        value={profile.email}
-                        disabled
-                        className="disabled-input"
-                    />
+                    <div className="form-group">
+                        <label>My email Address:</label>
+                        <input
+                            type="email"
+                            value={profile.email}
+                            disabled
+                            className="disabled-input"
+                        />
+                    </div>
                 </div>
 
                 <div className="form-group">

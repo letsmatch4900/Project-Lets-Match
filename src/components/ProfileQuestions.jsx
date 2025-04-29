@@ -4,21 +4,24 @@ import { collection, query, where, getDocs, doc, updateDoc, getDoc } from "fireb
 import "./ProfileQuestions.css";
 
 const ProfileQuestions = ({ userId }) => {
-    const [allQuestions, setAllQuestions] = useState([]);
     const [answeredQuestions, setAnsweredQuestions] = useState([]);
     const [unansweredQuestions, setUnansweredQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
+        let isMounted = true;
+        
         const fetchQuestions = async () => {
             try {
+                if (!isMounted) return;
                 setLoading(true);
                 
                 // Fetch all approved questions
                 const questionsQuery = query(collection(db, "questions"), where("status", "==", "approved"));
                 const questionDocs = await getDocs(questionsQuery);
                 
+                if (!isMounted) return;
                 console.log("Total questions from Firebase:", questionDocs.docs.length);
                 
                 // Filter out duplicate questions by question text
@@ -42,6 +45,8 @@ const ProfileQuestions = ({ userId }) => {
                 // Fetch user's answers
                 const userDocRef = doc(db, "users", userId);
                 const userDoc = await getDoc(userDocRef);
+                if (!isMounted) return;
+                
                 const userData = userDoc.exists() ? userDoc.data() : {};
                 const userAnswers = userData.questionAnswers || {};
                 
@@ -63,20 +68,27 @@ const ProfileQuestions = ({ userId }) => {
                 console.log("Answered questions:", answered.length);
                 console.log("Unanswered questions:", unanswered.length);
                 
-                setAllQuestions(questionsData);
-                setAnsweredQuestions(answered);
-                setUnansweredQuestions(unanswered);
+                if (isMounted) {
+                    setAnsweredQuestions(answered);
+                    setUnansweredQuestions(unanswered);
+                    setLoading(false);
+                }
             } catch (err) {
-                console.error("Error fetching questions:", err);
-                setError("Failed to load questions. Please try again later.");
-            } finally {
-                setLoading(false);
+                if (isMounted) {
+                    console.error("Error fetching questions:", err);
+                    setError("Failed to load questions. Please try again later.");
+                    setLoading(false);
+                }
             }
         };
         
         if (userId) {
             fetchQuestions();
         }
+        
+        return () => {
+            isMounted = false;
+        };
     }, [userId]);
 
     const handleAnswerQuestion = async (questionId, score) => {
