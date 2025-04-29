@@ -31,6 +31,7 @@ const UserDashboard = () => {
         return () => unsubscribe();
     }, []);
 
+    /*
     const handleSignOut = async () => {
         try {
             await signOut(auth);
@@ -39,6 +40,7 @@ const UserDashboard = () => {
             console.error("Error signing out:", error);
         }
     };
+    */
     // Toggle category options
     const toggleCategory = () => {
         setIsCategoryOpen(!isCategoryOpen);
