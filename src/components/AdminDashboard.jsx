@@ -41,6 +41,7 @@ const AdminDashboard = () => {
                 <button className="option-btn" onClick={() => navigate("/review-question")}>Review questions</button>
                 <button className="option-btn" onClick={() => navigate("/view-matches")}>View matches</button>
                 <button className="option-btn" onClick={() => navigate("/see-feedback")}>See feedback</button>
+                <button className="option-btn" onClick={() => navigate("/userlist")}>User List (TEST)</button>
             </div>
         </div>
     );

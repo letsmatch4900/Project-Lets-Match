@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { FaUser } from "react-icons/fa";
+//include the other Fa functions would cause error because they were not used.
 //import { FaHome, FaShareAlt, FaCommentDots, FaHeart, FaUser, FaQuestion, FaCog } from "react-icons/fa";
 import "./UserDashboard.css";
 
