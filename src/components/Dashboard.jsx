@@ -13,7 +13,8 @@ const Dashboard = () => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) {
-                navigate("/login");
+                // Redirect to guest landing page instead of login
+                navigate("/guest-landing");
                 return;
             }
 
@@ -35,7 +36,8 @@ const Dashboard = () => {
                 }
             } catch (error) {
                 console.error("Error reading role from Firestore:", error);
-                navigate("/login");
+                // Redirect to guest landing page in case of error
+                navigate("/guest-landing");
             }
         });
 

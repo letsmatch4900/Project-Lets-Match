@@ -15,6 +15,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import UserDashboard from "./components/UserDashboard";
 import UserList from "./components/UserList";
 import UserProfile from "./components/UserProfile";
+import GuestLanding from "./components/GuestLanding";
 //import MatchesPage from "./components/MatchesPage";
 import "./App.css";
 
@@ -67,6 +68,7 @@ function App() {
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/userlist" element={<UserList />} />
                     <Route path="/profile/:userId" element={<UserProfile />} />
+                    <Route path="/guest-landing" element={<GuestLanding />} />
 
                     {/* ✅ Routes for admin and user dashboards */}
                     <Route path="/admin-dashboard" element={<AdminDashboard />} />
