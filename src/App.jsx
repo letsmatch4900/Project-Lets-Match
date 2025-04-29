@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
-import { FaHome, FaShareAlt, FaCommentDots, FaHeart, FaUser, FaQuestion, FaCog } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
+//import { FaHome, FaShareAlt, FaCommentDots, FaHeart, FaUser, FaQuestion, FaCog } from "react-icons/fa";
 import { auth } from "./firebase";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
@@ -20,6 +21,12 @@ const BottomNav = () => {
     const navigate = useNavigate();
     
     return (
+
+        <div className="bottom-nav">
+            <button onClick={() => navigate('/build-profile')}><FaUser /></button>
+        </div>
+
+        /*
         <div className="bottom-nav">
             <button onClick={() => navigate('/')}><FaHome /></button>
             <button onClick={() => navigate('/share')}><FaShareAlt /></button>
@@ -29,6 +36,7 @@ const BottomNav = () => {
             <button onClick={() => navigate('/add-question')}><FaQuestion /></button>
             <button onClick={() => navigate('/settings')}><FaCog /></button>
         </div>
+        */
     );
 };
 

@@ -54,6 +54,7 @@ const Login = () => {
     }
   };
 
+  /*
   const handlePasswordReset = async () => {
     if (!email) {
       setError("Please enter your email to reset your password.");
@@ -67,7 +68,7 @@ const Login = () => {
       setError(err.message);
     }
   };
-
+*/
   return (
     <div className="login-container">
       <h5>Login</h5>
