@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase'; // assuming you have Firebase setup
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext'; // your auth context
+import { db } from '../firebase'; // Make sure your Firebase is initialized here
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext'; // Assuming you have a useAuth hook
 import './MatchesPage.css';
-
-const MAX_MATCHES_DISPLAYED = 10; // change this to 5 or 20 easily
 
 const MatchesPage = () => {
   const { currentUser, userRole } = useAuth();
   const [matches, setMatches] = useState([]);
   const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedUserMatches, setSelectedUserMatches] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showContacts, setShowContacts] = useState({}); // for toggling contact info display
+  const [showContacts, setShowContacts] = useState({});
 
   useEffect(() => {
+    if (!currentUser) return;
     if (userRole === 'admin') {
       fetchAllUsers();
     } else {
@@ -23,45 +23,39 @@ const MatchesPage = () => {
   }, [userRole, currentUser]);
 
   const fetchAllUsers = async () => {
-    const usersSnapshot = await getDocs(collection(db, 'users'));
-    const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setUsers(usersList);
+    const usersRef = collection(db, 'users');
+    const snapshot = await getDocs(usersRef);
+    const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setUsers(usersData);
   };
 
-  const fetchUserMatches = async (uid) => {
-    const matchesSnapshot = await getDocs(query(collection(db, 'matches'), where('userId', '==', uid)));
-    const matchesList = matchesSnapshot.docs
-      .map(doc => doc.data())
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, MAX_MATCHES_DISPLAYED);
-    setMatches(matchesList);
+  const fetchUserMatches = async (userId) => {
+    const matchesRef = collection(db, 'matches');
+    const q = query(matchesRef, where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    const matchesData = snapshot.docs.map(doc => doc.data());
+    matchesData.sort((a, b) => b.score - a.score); // Higher score first
+    setMatches(matchesData.slice(0, 10)); // First 10 matches
   };
 
-  const fetchMatchesForSelectedUser = async (userId) => {
-    const matchesSnapshot = await getDocs(query(collection(db, 'matches'), where('userId', '==', userId)));
-    const matchesList = matchesSnapshot.docs
-      .map(doc => doc.data())
-      .sort((a, b) => b.matchScore - a.matchScore);
-    setMatches(matchesList);
+  const handleSelectUser = async (userId) => {
+    setSelectedUserId(userId);
+    const matchesRef = collection(db, 'matches');
+    const q = query(matchesRef, where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    const matchesData = snapshot.docs.map(doc => doc.data());
+    matchesData.sort((a, b) => b.score - a.score);
+    setSelectedUserMatches(matchesData);
   };
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleUserSelect = (user) => {
-    setSelectedUser(user);
-    fetchMatchesForSelectedUser(user.id);
-  };
-
-  const toggleShowContact = (matchId) => {
+  const toggleContactInfo = (matchId) => {
     setShowContacts(prev => ({
       ...prev,
-      [matchId]: !prev[matchId],
+      [matchId]: !prev[matchId]
     }));
   };
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = users.filter(user => 
     user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,84 +64,84 @@ const MatchesPage = () => {
 
   return (
     <div className="matches-page">
-      {userRole === 'admin' ? (
-        <div className="admin-view">
-          <div className="search-section">
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="search-bar"
-            />
-            <div className="user-list">
-              {filteredUsers.map(user => (
-                <div
-                  key={user.id}
-                  className={user-item ${selectedUser?.id === user.id ? 'selected' : ''}}
-                  onClick={() => handleUserSelect(user)}
-                >
-                  {user.firstName} {user.lastName} ({user.username})
-                </div>
-              ))}
-            </div>
+      <h1>{userRole === 'admin' ? 'Admin - View Matches' : 'My Matches'}</h1>
+
+      {userRole === 'admin' && (
+        <div className="admin-section">
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-bar"
+          />
+          <div className="user-list">
+            {filteredUsers.map(user => (
+              <button
+                key={user.id}
+                className={`user-button ${selectedUserId === user.id ? 'selected' : ''}`}
+                onClick={() => handleSelectUser(user.id)}
+              >
+                {user.firstName} {user.lastName}
+              </button>
+            ))}
           </div>
-          <div className="matches-section">
-            {selectedUser && (
-              <div className="scrollable-matches">
-                <div className="selected-user">
-                  <h2>{selectedUser.firstName} {selectedUser.lastName}</h2>
-                  {selectedUser.contactInfo && (
+
+          {selectedUserId && (
+            <div className="matches-list">
+              <h2>Matches for selected user:</h2>
+              {selectedUserMatches.map((match, index) => (
+                <div key={index} className="match-card">
+                  <p>{match.matchName}</p>
+                  <button onClick={() => toggleContactInfo(match.matchId)}>
+                    {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
+                  </button>
+                  {showContacts[match.matchId] && (
                     <div className="contact-info">
-                      {Object.entries(selectedUser.contactInfo).map(([key, value]) => (
-                        <div key={key}><strong>{key}:</strong> {value}</div>
-                      ))}
+                      <p>Email: {match.contactInfo?.email || 'Hidden'}</p>
+                      <p>Phone: {match.contactInfo?.phone || 'Hidden'}</p>
                     </div>
                   )}
                 </div>
-                <div className="matches-list">
-                  {matches.map((match, index) => (
-                    <div key={index} className="match-item">
-                      <h3>{match.matchName} ({match.matchScore}%)</h3>
-                      <button onClick={() => toggleShowContact(match.matchId)}>
-                        {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
-                      </button>
-                      {showContacts[match.matchId] && match.contactInfo && (
-                        <div className="contact-info">
-                          {Object.entries(match.contactInfo).map(([key, value]) => (
-                            <div key={key}><strong>{key}:</strong> {value}</div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="user-view">
-          <h2>My Matches</h2>
-          <div className="matches-list">
-            {matches.map((match, index) => (
-              <div key={index} className="match-item">
-                <h3>{match.matchName} ({match.matchScore}%)</h3>
-                <button onClick={() => toggleShowContact(match.matchId)}>
-                  {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
-                </button>
-                {showContacts[match.matchId] && match.contactInfo && (
-                  <div className="contact-info">
-                    {Object.entries(match.contactInfo).map(([key, value]) => (
-                      <div key={key}><strong>{key}:</strong> {value}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+
+      {userRole !== 'admin' && (
+        <div className="matches-list">
+          {matches.map((match, index) => (
+            <div key={index} className="match-card">
+              <p>{match.matchName}</p>
+              <button onClick={() => toggleContactInfo(match.matchId)}>
+                {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
+              </button>
+              {showContacts[match.matchId] && (
+                <div className="contact-info">
+                  <p>Email: {match.contactInfo?.email || 'Hidden'}</p>
+                  <p>Phone: {match.contactInfo?.phone || 'Hidden'}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <nav className="bottom-nav">
+        <a href="/home">
+          <div className="nav-icon">🏠</div>
+          <div className="nav-label">Home</div>
+        </a>
+        <a href="/matches">
+          <div className="nav-icon">❤️</div>
+          <div className="nav-label">Matches</div>
+        </a>
+        <a href="/profile">
+          <div className="nav-icon">👤</div>
+          <div className="nav-label">Profile</div>
+        </a>
+      </nav>
     </div>
   );
 };
