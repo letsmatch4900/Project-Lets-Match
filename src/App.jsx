@@ -18,7 +18,7 @@ import "./App.css";
 // Bottom Navigation Component
 const BottomNav = () => {
     const navigate = useNavigate();
-    
+    /*
     return (
         <div className="bottom-nav">
             <button onClick={() => navigate('/')}><FaHome /></button>
@@ -30,6 +30,7 @@ const BottomNav = () => {
             <button onClick={() => navigate('/settings')}><FaCog /></button>
         </div>
     );
+    */
 };
 
 function App() {
