@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase'; // assuming you have Firebase setup
+import { db } from '../firebase'; // make sure this file properly exports initialized db
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext'; // your auth context
+import { useAuth } from '../context/AuthContext'; // adjust based on your app structure
 import './MatchesPage.css';
 
-const MAX_MATCHES_DISPLAYED = 10; // change this to 5 or 20 easily
+const MAX_MATCHES_DISPLAYED = 10;
 
 const MatchesPage = () => {
   const { currentUser, userRole } = useAuth();
@@ -12,9 +12,10 @@ const MatchesPage = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showContacts, setShowContacts] = useState({}); // for toggling contact info display
+  const [showContacts, setShowContacts] = useState({});
 
   useEffect(() => {
+    if (!currentUser) return; // Important: wait until currentUser is available
     if (userRole === 'admin') {
       fetchAllUsers();
     } else {
@@ -23,26 +24,47 @@ const MatchesPage = () => {
   }, [userRole, currentUser]);
 
   const fetchAllUsers = async () => {
-    const usersSnapshot = await getDocs(collection(db, 'users'));
-    const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setUsers(usersList);
+    try {
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersList = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setUsers(usersList);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
   };
 
   const fetchUserMatches = async (uid) => {
-    const matchesSnapshot = await getDocs(query(collection(db, 'matches'), where('userId', '==', uid)));
-    const matchesList = matchesSnapshot.docs
-      .map(doc => doc.data())
+    try {
+      const matchesQuery = query(collection(db, 'matches'), where('userId', '==', uid));
+      const matchesSnapshot = await getDocs(matchesQuery);
+      const matchesList = matchesSnapshot.docs.map(doc => ({
+        matchId: doc.id, // Important: get the match document ID
+        ...doc.data(),
+      }))
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, MAX_MATCHES_DISPLAYED);
-    setMatches(matchesList);
+      setMatches(matchesList);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+    }
   };
 
   const fetchMatchesForSelectedUser = async (userId) => {
-    const matchesSnapshot = await getDocs(query(collection(db, 'matches'), where('userId', '==', userId)));
-    const matchesList = matchesSnapshot.docs
-      .map(doc => doc.data())
+    try {
+      const matchesQuery = query(collection(db, 'matches'), where('userId', '==', userId));
+      const matchesSnapshot = await getDocs(matchesQuery);
+      const matchesList = matchesSnapshot.docs.map(doc => ({
+        matchId: doc.id, // again, use matchId = doc.id
+        ...doc.data(),
+      }))
       .sort((a, b) => b.matchScore - a.matchScore);
-    setMatches(matchesList);
+      setMatches(matchesList);
+    } catch (error) {
+      console.error('Error fetching selected user matches:', error);
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -106,8 +128,8 @@ const MatchesPage = () => {
                   )}
                 </div>
                 <div className="matches-list">
-                  {matches.map((match, index) => (
-                    <div key={index} className="match-item">
+                  {matches.map((match) => (
+                    <div key={match.matchId} className="match-item">
                       <h3>{match.matchName} ({match.matchScore}%)</h3>
                       <button onClick={() => toggleShowContact(match.matchId)}>
                         {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
@@ -130,8 +152,8 @@ const MatchesPage = () => {
         <div className="user-view">
           <h2>My Matches</h2>
           <div className="matches-list">
-            {matches.map((match, index) => (
-              <div key={index} className="match-item">
+            {matches.map((match) => (
+              <div key={match.matchId} className="match-item">
                 <h3>{match.matchName} ({match.matchScore}%)</h3>
                 <button onClick={() => toggleShowContact(match.matchId)}>
                   {showContacts[match.matchId] ? 'Hide Contact Info' : 'Show Contact Info'}
