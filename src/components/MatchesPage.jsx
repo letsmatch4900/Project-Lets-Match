@@ -3,7 +3,7 @@ import { db } from "../firebase";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../firebase";
-import "./Matches.css"; 
+import "./MatchesPage.css"; 
 
 const Matches = () => {
   const [user, loading] = useAuthState(auth);
