@@ -55,6 +55,7 @@ const Login = () => {
     }
   };
 
+  // Don't need this function since there is a button that links the user to recovery page for password reset
   /*
   const handlePasswordReset = async () => {
     if (!email) {
