@@ -12,7 +12,7 @@ import BuildProfile from "./components/BuildProfile";
 import Settings from "./components/Settings";
 import AdminDashboard from "./components/AdminDashboard";
 import UserDashboard from "./components/UserDashboard";
-import MatchesPage from "./components/MatchesPage";
+//import MatchesPage from "./components/MatchesPage";
 import "./App.css";
 
 // Bottom Navigation Component
@@ -56,7 +56,6 @@ function App() {
                     <Route path="/review-question" element={<ReviewQuestion />} />
                     <Route path="/build-profile" element={<BuildProfile />} />
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/matches" element={<MatchesPage />} />
 
                     {/* ✅ Routes for admin and user dashboards */}
                     <Route path="/admin-dashboard" element={<AdminDashboard />} />
