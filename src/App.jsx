@@ -12,7 +12,7 @@ import BuildProfile from "./components/BuildProfile";
 import Settings from "./components/Settings";
 import AdminDashboard from "./components/AdminDashboard";
 import UserDashboard from "./components/UserDashboard";
-import MatchesPage from "/components/MatchesPage";
+import MatchesPage from "./components/MatchesPage";
 import "./App.css";
 
 // Bottom Navigation Component
