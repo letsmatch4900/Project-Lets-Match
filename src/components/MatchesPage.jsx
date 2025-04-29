@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { db } from '../firebase'; // make sure this file properly exports initialized db
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { auth } from './firebase';
+import { AuthContext } from '../context/AuthContext'; 
 import './MatchesPage.css';
 
 const MAX_MATCHES_DISPLAYED = 10;
 
 const MatchesPage = () => {
-  const { currentUser, userRole } = useAuth();
+  const { currentUser, userRole } = useContext(AuthContext);
   const [matches, setMatches] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
