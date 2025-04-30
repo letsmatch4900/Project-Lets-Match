@@ -16,7 +16,8 @@ import UserDashboard from "./components/UserDashboard";
 import UserList from "./components/UserList";
 import UserProfile from "./components/UserProfile";
 import GuestLanding from "./components/GuestLanding";
-//import MatchesPage from "./components/MatchesPage";
+import AnswerQuestion from "./components/AnswerQuestion";
+import MatchesPage from "./components/MatchesPage";
 import "./App.css";
 
 // Bottom Navigation Component
@@ -69,6 +70,9 @@ function App() {
                     <Route path="/userlist" element={<UserList />} />
                     <Route path="/profile/:userId" element={<UserProfile />} />
                     <Route path="/guest-landing" element={<GuestLanding />} />
+                    <Route path="/answer/:id" element={<AnswerQuestion />} />
+                    <Route path="/matches" element={<MatchesPage />} />
+
 
                     {/* ✅ Routes for admin and user dashboards */}
                     <Route path="/admin-dashboard" element={<AdminDashboard />} />

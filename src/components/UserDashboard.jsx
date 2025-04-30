@@ -85,7 +85,7 @@ const UserDashboard = () => {
                     <button className="option-btn" onClick={() => navigate("/add-question")}>
                         Add a question
                     </button>
-                    <button className="option-btn" onClick={() => navigate("/my-matches")}>
+                    <button className="option-btn" onClick={() => navigate("/matches")}>
                         My matches
                     </button>
                     <button className="option-btn" onClick={() => navigate("/feedback")}>
