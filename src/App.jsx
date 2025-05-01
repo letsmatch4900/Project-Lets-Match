@@ -20,6 +20,7 @@ import UserProfile from "./components/UserProfile";
 import GuestLanding from "./components/GuestLanding";
 import AnswerQuestion from "./components/AnswerQuestion";
 import MatchesPage from "./components/MatchesPage";
+import About from "./components/About";
 import "./App.css";
 
 // Bottom Navigation Component
@@ -76,6 +77,7 @@ function App() {
                     <Route path="/guest-landing" element={<GuestLanding />} />
                     <Route path="/answer/:id" element={<AnswerQuestion />} />
                     <Route path="/matches" element={<MatchesPage />} />
+                    <Route path="/about" element={<About />} />
 
 
                     {/* ✅ Routes for admin and user dashboards */}

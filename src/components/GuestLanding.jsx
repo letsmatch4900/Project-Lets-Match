@@ -43,7 +43,7 @@ const GuestLanding = () => {
                 <button onClick={() => navigate("/share")}>
                     <FaShareAlt />
                 </button>
-                <button onClick={() => navigate("/feedback")}>
+                <button onClick={() => navigate("/user-feedback")}>
                     <FaCommentDots />
                 </button>
             </div>
