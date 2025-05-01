@@ -66,16 +66,22 @@ export default function ReviewQuestion() {
 
       {/* Questions List */}
       <div className="question-list">
-        {questions.map((q) => (
-          <button
-            key={q.id}
-            className="question-item"
-            onClick={() => handleSelectQuestion(q)}
-          >
-            {q.question}
-          </button>
-        ))}
-      </div>
+      {questions.map((q) => (
+        <button
+          key={q.id}
+          className={`question-item ${q.status}`}
+          onClick={() => handleSelectQuestion(q)}
+        >
+          <div className="question-text">{q.question}</div>
+          <div className="question-status">
+            {q.status === "approved" && "✅ Approved"}
+            {q.status === "pending" && "⏳ Pending"}
+            {q.status === "rejected" && "❌ Rejected"}
+          </div>
+        </button>
+      ))}
+    </div>
+
 
       {/* Edit Section */}
       {selectedQuestion && (

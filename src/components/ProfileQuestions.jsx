@@ -354,6 +354,7 @@ const ProfileQuestions = ({ userId }) => {
         }
     };
 
+    
     const renderQuestion = (question, isAnswered = false) => {
         const scoreOptions = [0, 2.5, 5, 7.5, 10];
         const isUpdating = updatingQuestionId === question.id;
@@ -520,26 +521,6 @@ const ProfileQuestions = ({ userId }) => {
                     )}
                 </div>
 
-                <div className="questions-column">
-                    <div className="section-header">
-                        <h3>Questions You've Submitted</h3>
-                        {submittedQuestions.length > 0 && 
-                            renderSortDropdown(submittedSort, setSubmittedSort, submittedSortOptions)
-                        }
-                    </div>
-                    {submittedQuestions.length === 0 ? (
-                        <p className="no-questions">You haven't submitted any questions yet.</p>
-                    ) : (
-                        <div className="questions-list">
-                        {sortedSubmittedQuestions.map(q => (
-                            <div key={q.id} className="question-card submitted-question">
-                            <h4>{q.question}</h4>
-                            <p>Status: <strong className={`status-${q.status || "pending"}`}>{q.status || "pending"}</strong></p>
-                            </div>
-                        ))}
-                        </div>
-                    )}
-                </div>
             </div>
         </div>
     );
