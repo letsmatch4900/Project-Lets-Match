@@ -368,13 +368,20 @@ const ProfileQuestions = ({ userId }) => {
         };
     
         const handleSubmit = () => {
-            const { selfScore, prefMin, prefMax, strictness } = values;
+            const {
+                selfScore = 5,
+                prefMin = 0,
+                prefMax = 10,
+                strictness = 5
+            } = sliderValues[question.id] || {};
+        
             if (isAnswered) {
                 handleUpdateAnswer(question.id, selfScore, prefMin, prefMax, strictness);
             } else {
                 handleAnswerQuestion(question.id, selfScore, prefMin, prefMax, strictness);
             }
         };
+        
     
         const renderSlider = (label, field) => (
             <div className="slider-container">
