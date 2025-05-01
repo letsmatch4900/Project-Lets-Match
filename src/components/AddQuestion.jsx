@@ -11,6 +11,7 @@ import {
   onSnapshot,
   query,
   orderBy,
+  where,
 } from "firebase/firestore";
 import "./AddQuestion.css";
 
@@ -27,11 +28,19 @@ export default function AddQuestion() {
   const [editLabels, setEditLabels] = useState({});
 
   useEffect(() => {
-    const q = query(collection(db, "questions"), orderBy("createdAt", "desc"));
+    if (!user || !user.uid) return;
+    
+    // Filter questions by the current user ID to only show their submitted questions
+    const q = query(
+      collection(db, "questions"), 
+      where("submittedBy", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+    
     return onSnapshot(q, (snap) =>
       setQuestionsList(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     );
-  }, []);
+  }, [user]);
 
   const handleFinalSubmit = async e => {
     e.preventDefault();
@@ -50,6 +59,15 @@ export default function AddQuestion() {
   };
 
   const handleDelete = async id => {
+    // Find the question in the list
+    const questionToDelete = questionsList.find(q => q.id === id);
+    
+    // Prevent deletion if the question is approved
+    if (questionToDelete && questionToDelete.status === "approved") {
+      alert("Approved questions cannot be deleted. Please contact an admin if needed.");
+      return;
+    }
+    
     await deleteDoc(doc(db, "questions", id));
   };
 
@@ -83,6 +101,11 @@ export default function AddQuestion() {
       {[0, 2.5, 5, 7.5, 10].map((s, i) => <span key={i}>{lbls[s] || ""}</span>)}
     </div>
   );
+
+  // Function to determine if the delete button should be disabled
+  const isDeleteDisabled = (status) => {
+    return status === "approved";
+  };
 
   return (
     <div className="add-question-container">
@@ -177,7 +200,7 @@ export default function AddQuestion() {
       )}
 
       <div className="question-list">
-        <h3>Submitted Questions</h3>
+        <h3>Your Submitted Questions</h3>
         {questionsList.length === 0 && <p>No questions submitted yet.</p>}
         {questionsList.map(item => (
           <div key={item.id} className="question-item">
@@ -204,12 +227,12 @@ export default function AddQuestion() {
                   : "❌ Rejected"}
               </p>
               <div className="button-group">
-                
                 <button
                   onClick={() => handleDelete(item.id)}
-                  className="delete-button"
+                  className={`delete-button ${isDeleteDisabled(item.status) ? 'disabled' : ''}`}
+                  disabled={isDeleteDisabled(item.status)}
                 >
-                  Delete
+                  {isDeleteDisabled(item.status) ? 'Approved (Cannot Delete)' : 'Delete'}
                 </button>
               </div>
             </div>

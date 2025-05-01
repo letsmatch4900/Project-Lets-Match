@@ -27,6 +27,9 @@ export const getDocuments = async (collectionName) => {
 };
 
 // ✅ Delete a question from Firestore
+// IMPORTANT: For approved questions, this function should only be called from admin components.
+// Regular users should not be able to delete approved questions.
+// The deletion permission check should be implemented in the component itself.
 export const deleteDocument = async (collectionName, docId) => {
     try {
         const docRef = doc(db, collectionName, docId);

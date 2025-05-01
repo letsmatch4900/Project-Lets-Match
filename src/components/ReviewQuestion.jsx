@@ -2,6 +2,13 @@ import React, { useState, useEffect } from "react";
 import { getDocuments, updateDocument, deleteDocument } from "../services/firestore"; // Your Firestore functions
 import "./ReviewQuestion.css"; // Your CSS file
 
+/**
+ * ReviewQuestion - ADMIN ONLY COMPONENT
+ * 
+ * This component allows admins to review, approve, reject, and delete questions.
+ * Unlike the user version, admins can delete approved questions.
+ * Regular users should not have access to this component.
+ */
 export default function ReviewQuestion() {
   const [questions, setQuestions] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
@@ -46,6 +53,7 @@ export default function ReviewQuestion() {
     setAnswer("");
   };
 
+  // Admin-only function - can delete any question regardless of status
   const handleDeleteQuestion = async () => {
     if (!selectedQuestion) return;
 
