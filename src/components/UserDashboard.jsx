@@ -91,7 +91,7 @@ const UserDashboard = () => {
                     <button className="option-btn" onClick={() => navigate("/user-feedback")}>
                         Feedback
                     </button>
-                    <button className="option-btn" onClick={() => navigate("/share")}>
+                    <button className="option-btn" onClick={() => navigate("/Share")}>
                         Share
                     </button>
                 </div>

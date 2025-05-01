@@ -11,6 +11,7 @@ import AddQuestion from "./components/AddQuestion";
 import ReviewQuestion from "./components/ReviewQuestion";
 import BuildProfile from "./components/BuildProfile";
 import Settings from "./components/Settings";
+import Share from "./components/Share";
 import UserFeedback from "./components/UserFeedback"
 import AdminFeedback from "./components/AdminFeedback";
 import AdminDashboard from "./components/AdminDashboard";
@@ -37,7 +38,7 @@ const BottomNav = () => {
         
         <div className="bottom-nav">
             <button onClick={() => navigate('/')}><FaHome /></button>
-            <button onClick={() => navigate('/share')}><FaShareAlt /></button>
+            <button onClick={() => navigate('/Share')}><FaShareAlt /></button>
             <button onClick={() => navigate('/user-feedback')}><FaCommentDots /></button>
             <button onClick={() => navigate('/matches')}><FaHeart /></button>
             <button onClick={() => navigate('/build-profile')}><FaUser /></button>
@@ -71,6 +72,7 @@ function App() {
                     <Route path="/review-question" element={<ReviewQuestion />} />
                     <Route path="/build-profile" element={<BuildProfile />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/share" element ={<Share/>}/>
                     <Route path="/user-feedback" element={<UserFeedback/>}/>
                     <Route path="/admin-feedback" element={<AdminFeedback/>}/>
                     <Route path="/userlist" element={<UserList />} />
