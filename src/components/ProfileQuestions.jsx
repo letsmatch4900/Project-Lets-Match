@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, orderBy, limit } from "firebase/firestore";
 import "./ProfileQuestions.css";
 
 const ProfileQuestions = ({ userId }) => {
@@ -8,7 +8,13 @@ const ProfileQuestions = ({ userId }) => {
     const [unansweredQuestions, setUnansweredQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [feedback, setFeedback] = useState("");
     const [submittedQuestions, setSubmittedQuestions] = useState([]);
+    const [answeredSort, setAnsweredSort] = useState("default");
+    const [unansweredSort, setUnansweredSort] = useState("default");
+    const [submittedSort, setSubmittedSort] = useState("default");
+    const [updatingQuestionId, setUpdatingQuestionId] = useState(null);
+    const [forceUpdate, setForceUpdate] = useState(0);
 
     useEffect(() => {
         let isMounted = true;
@@ -17,6 +23,7 @@ const ProfileQuestions = ({ userId }) => {
             try {
                 if (!isMounted) return;
                 setLoading(true);
+                setError("");
                 
                 // Fetch all approved questions
                 const questionsQuery = query(collection(db, "questions"), where("status", "==", "approved"));
@@ -43,31 +50,73 @@ const ProfileQuestions = ({ userId }) => {
                 const questionsData = Array.from(uniqueQuestionsMap.values());
                 console.log("Unique questions after filtering:", questionsData.length);
                 
-                // Fetch user's answers
-                const answersSnap = await getDocs(query(
-                    collection(db, "answers"),
-                    where("userId", "==", userId)
-                  ));
-                  
-                  const userAnswersMap = {};
-                  answersSnap.forEach(doc => {
+                // Fetch user's answers - be more careful with ordering
+                // Some answers might not have answeredAt field, so we need to handle that
+                let answersQuery;
+                try {
+                    // Try with ordering first
+                    answersQuery = query(
+                        collection(db, "answers"),
+                        where("userId", "==", userId),
+                        orderBy("answeredAt", "desc")
+                    );
+                    await getDocs(answersQuery); // Test if this works
+                } catch (orderError) {
+                    console.error("Error using orderBy, falling back to simple query:", orderError);
+                    // If ordering fails, fall back to a simpler query
+                    answersQuery = query(
+                        collection(db, "answers"),
+                        where("userId", "==", userId)
+                    );
+                }
+                
+                const answersSnap = await getDocs(answersQuery);
+                
+                console.log("User answers found:", answersSnap.docs.length);
+                
+                // Create a map of the user's answers, keyed by questionId
+                const userAnswersMap = {};
+                answersSnap.forEach(doc => {
                     const answer = doc.data();
-                    userAnswersMap[answer.questionId] = answer.selfScore;
-                  });
-                  
+                    // Handle possible missing fields
+                    const answeredAt = answer.answeredAt ? 
+                        (typeof answer.answeredAt.toDate === 'function' ? answer.answeredAt.toDate() : new Date(answer.answeredAt)) 
+                        : new Date();
+                    
+                    // Only add this answer if we haven't seen this questionId before
+                    // or if this is a more recent answer
+                    if (!userAnswersMap[answer.questionId] || 
+                        answeredAt > userAnswersMap[answer.questionId].answeredAt) {
+                        userAnswersMap[answer.questionId] = {
+                            selfScore: answer.selfScore !== undefined ? answer.selfScore : 5,
+                            answeredAt: answeredAt,
+                            answerId: doc.id
+                        };
+                    }
+                });
+                
+                console.log("User answers mapped:", Object.keys(userAnswersMap).length);
                 
                 // Split questions into answered and unanswered
                 const answered = [];
                 const unanswered = [];
                 
+                // Track answered questions to prevent duplicates
+                const answeredQuestionsText = new Set();
+                
                 questionsData.forEach(question => {
                     if (userAnswersMap[question.id] !== undefined) {
-                        answered.push({
-                          ...question,
-                          userScore: userAnswersMap[question.id]
-                        });
-                      }
-                       else {
+                        // Only add if we haven't already added a similar question
+                        if (!answeredQuestionsText.has(question.question)) {
+                            answeredQuestionsText.add(question.question);
+                            answered.push({
+                                ...question,
+                                userScore: userAnswersMap[question.id].selfScore,
+                                answeredAt: userAnswersMap[question.id].answeredAt,
+                                answerId: userAnswersMap[question.id].answerId
+                            });
+                        }
+                    } else {
                         unanswered.push(question);
                     }
                 });
@@ -76,25 +125,61 @@ const ProfileQuestions = ({ userId }) => {
                 console.log("Unanswered questions:", unanswered.length);
                 
                 if (isMounted) {
-                setAnsweredQuestions(answered);
-                setUnansweredQuestions(unanswered);
+                    setAnsweredQuestions(answered);
+                    setUnansweredQuestions(unanswered);
+                    
+                    // Debug: Log the first few answered questions with their scores
+                    if (answered.length > 0) {
+                        console.log("Sample answered questions with scores:", 
+                            answered.slice(0, 3).map(q => ({
+                                question: q.question,
+                                score: q.userScore
+                            }))
+                        );
+                    }
 
-                // 🔽 Add this block to fetch submitted questions
-                const submittedQuery = query(
-                    collection(db, "questions"),
-                    where("submittedBy", "==", userId)
-                );
-                const submittedSnap = await getDocs(submittedQuery);
-                const submitted = submittedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setSubmittedQuestions(submitted);
+                    // 🔽 Add this block to fetch submitted questions
+                    try {
+                        const submittedQuery = query(
+                            collection(db, "questions"),
+                            where("submittedBy", "==", userId)
+                        );
+                        const submittedSnap = await getDocs(submittedQuery);
+                        const submitted = submittedSnap.docs.map(doc => ({ 
+                            id: doc.id, 
+                            ...doc.data(),
+                            submittedAt: doc.data().createdAt?.toDate() || new Date()
+                        }));
+                        setSubmittedQuestions(submitted);
+                    } catch (submittedError) {
+                        console.error("Error fetching submitted questions:", submittedError);
+                        // Don't fail the whole component if just this part fails
+                    }
 
-                setLoading(false);
+                    setLoading(false);
                 }
 
             } catch (err) {
                 if (isMounted) {
                     console.error("Error fetching questions:", err);
-                    setError("Failed to load questions. Please try again later.");
+                    // Provide more specific error message based on the error
+                    if (err.code === 'permission-denied') {
+                        setError("You don't have permission to access these questions. Please log in again.");
+                    } else if (err.code === 'unavailable') {
+                        setError("Database is currently unavailable. Please try again later.");
+                    } else if (err.code === 'not-found') {
+                        setError("Questions collection not found. Please contact support.");
+                    } else {
+                        setError("Failed to load questions. Please try again later.");
+                    }
+                    
+                    // Log detailed error information for debugging
+                    console.error("Error details:", {
+                        code: err.code,
+                        message: err.message,
+                        stack: err.stack
+                    });
+                    
                     setLoading(false);
                 }
             }
@@ -102,6 +187,11 @@ const ProfileQuestions = ({ userId }) => {
         
         if (userId) {
             fetchQuestions();
+        } else {
+            if (isMounted) {
+                setError("User ID is required to load questions.");
+                setLoading(false);
+            }
         }
         
         return () => {
@@ -111,49 +201,176 @@ const ProfileQuestions = ({ userId }) => {
 
     const handleAnswerQuestion = async (questionId, score) => {
         try {
+            setUpdatingQuestionId(questionId);
+            setError("");
+            const now = new Date();
+            
+            console.log(`Answering question with ID ${questionId} with score: ${score}`);
+            
+            // First, create a proper record in the answers collection
+            const answerData = {
+                userId,
+                questionId,
+                selfScore: score,
+                answeredAt: now
+            };
+            
+            // Add to the answers collection
+            const answerRef = await addDoc(collection(db, "answers"), answerData);
+            console.log(`Created new answer document: ${answerRef.id}`);
+            
             // Update the user document with the new answer
             const userDocRef = doc(db, "users", userId);
             await updateDoc(userDocRef, {
                 [`questionAnswers.${questionId}`]: score,
-                updatedAt: new Date()
+                updatedAt: now
             });
+            
+            console.log(`Updated user document with score: ${score}`);
             
             // Update local state
             const answeredQuestion = unansweredQuestions.find(q => q.id === questionId);
             if (answeredQuestion) {
                 setUnansweredQuestions(prev => prev.filter(q => q.id !== questionId));
-                setAnsweredQuestions(prev => [...prev, {...answeredQuestion, userScore: score}]);
+                
+                // Check if a similar question already exists in answeredQuestions
+                const questionText = answeredQuestion.question;
+                const isDuplicate = answeredQuestions.some(q => q.question === questionText);
+                
+                // Only add to answered if not a duplicate
+                if (!isDuplicate) {
+                    setAnsweredQuestions(prev => [...prev, {
+                        ...answeredQuestion, 
+                        userScore: score,
+                        answeredAt: now,
+                        answerId: answerRef.id
+                    }]);
+                }
             }
+            
+            setFeedback("Answer saved successfully!");
+            setTimeout(() => setFeedback(""), 3000);
         } catch (err) {
             console.error("Error saving answer:", err);
             setError("Failed to save your answer. Please try again.");
+        } finally {
+            setUpdatingQuestionId(null);
         }
     };
 
     const handleUpdateAnswer = async (questionId, newScore) => {
         try {
+            setUpdatingQuestionId(questionId);
+            setError("");
+            const now = new Date();
+            
+            // Find the question being updated
+            const questionToUpdate = answeredQuestions.find(q => q.id === questionId);
+            
+            if (!questionToUpdate) {
+                throw new Error("Question not found");
+            }
+            
+            console.log(`Updating question "${questionToUpdate.question}" with score: ${newScore}`);
+            
+            // If we have an answerId, update that specific document
+            if (questionToUpdate.answerId) {
+                const answerDocRef = doc(db, "answers", questionToUpdate.answerId);
+                await updateDoc(answerDocRef, {
+                    selfScore: newScore,
+                    updatedAt: now
+                });
+                console.log(`Updated existing answer document: ${questionToUpdate.answerId}`);
+            } else {
+                // If no answer document exists, create one
+                const answerData = {
+                    userId,
+                    questionId,
+                    selfScore: newScore,
+                    answeredAt: now
+                };
+                const newAnswerRef = await addDoc(collection(db, "answers"), answerData);
+                console.log(`Created new answer document: ${newAnswerRef.id}`);
+                // Update the question with the new answerId
+                questionToUpdate.answerId = newAnswerRef.id;
+            }
+            
             // Update the user document with the updated answer
             const userDocRef = doc(db, "users", userId);
             await updateDoc(userDocRef, {
                 [`questionAnswers.${questionId}`]: newScore,
-                updatedAt: new Date()
+                updatedAt: now
             });
             
-            // Update local state
+            console.log(`Updated user document with new score: ${newScore}`);
+            
+            // Create a new object for each question to ensure React detects the change
             setAnsweredQuestions(prev => 
-                prev.map(q => q.id === questionId ? {...q, userScore: newScore} : q)
+                prev.map(q => {
+                    if (q.id === questionId) {
+                        return {
+                            ...q,
+                            userScore: newScore,
+                            answeredAt: now
+                        };
+                    }
+                    return q;
+                })
             );
+            
+            // Force a component update
+            setForceUpdate(prev => prev + 1);
+            
+            setFeedback("Answer updated successfully!");
+            setTimeout(() => setFeedback(""), 3000);
         } catch (err) {
             console.error("Error updating answer:", err);
             setError("Failed to update your answer. Please try again.");
+        } finally {
+            setUpdatingQuestionId(null);
+        }
+    };
+
+    const sortQuestions = (questions, sortMethod) => {
+        const sortedQuestions = [...questions];
+
+        switch (sortMethod) {
+            case "az":
+                return sortedQuestions.sort((a, b) => a.question.localeCompare(b.question));
+            case "za":
+                return sortedQuestions.sort((a, b) => b.question.localeCompare(a.question));
+            case "newest":
+                return sortedQuestions.sort((a, b) => new Date(b.answeredAt || 0) - new Date(a.answeredAt || 0));
+            case "oldest":
+                return sortedQuestions.sort((a, b) => new Date(a.answeredAt || 0) - new Date(b.answeredAt || 0));
+            case "highscore":
+                return sortedQuestions.sort((a, b) => (b.userScore || 0) - (a.userScore || 0));
+            case "lowscore":
+                return sortedQuestions.sort((a, b) => (a.userScore || 0) - (b.userScore || 0));
+            case "status":
+                return sortedQuestions.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
+            default:
+                return sortedQuestions;
         }
     };
 
     const renderQuestion = (question, isAnswered = false) => {
         const scoreOptions = [0, 2.5, 5, 7.5, 10];
+        const isUpdating = updatingQuestionId === question.id;
+        // Ensure we always have a valid score value, even if userScore is undefined
+        const currentValue = isAnswered && question.userScore !== undefined ? 
+            parseFloat(question.userScore) : 5;
+        
+        // For debugging
+        if (isAnswered) {
+            console.log(`Rendering answered question: "${question.question.substring(0, 30)}..." with score: ${currentValue}`);
+        }
         
         return (
-            <div className="question-card">
+            <div className={`question-card ${isUpdating ? 'updating' : ''}`} 
+                 data-question-id={question.id}
+                 data-current-score={currentValue}
+                 data-force-update={forceUpdate}>
                 <h3>{question.question}</h3>
                 <div className="slider-container">
                     <input 
@@ -161,7 +378,7 @@ const ProfileQuestions = ({ userId }) => {
                         min="0" 
                         max="10" 
                         step="2.5"
-                        value={isAnswered ? question.userScore : 5}
+                        value={currentValue}
                         onChange={(e) => {
                             const newScore = parseFloat(e.target.value);
                             if (isAnswered) {
@@ -171,57 +388,130 @@ const ProfileQuestions = ({ userId }) => {
                             }
                         }}
                         className="slider"
+                        disabled={isUpdating}
                     />
                     <div className="slider-labels">
                         {scoreOptions.map(score => (
                             <div key={score} className="label-container">
-                                <div className="tick"></div>
+                                <div className={`tick ${currentValue === score ? "active-tick" : ""}`}></div>
                                 {question.labels && question.labels[score] && (
                                     <span className="label-text">{question.labels[score]}</span>
                                 )}
-                                <span className="score-value">{score}</span>
+                                <span className={`score-value ${currentValue === score ? "active-score" : ""}`}>{score}</span>
                             </div>
                         ))}
                     </div>
+                    {isAnswered && (
+                        <div className="answer-metadata">
+                            <span>
+                              Current value: {currentValue} | 
+                              Last updated: {question.answeredAt?.toLocaleDateString() || 'Unknown'}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
         );
     };
 
+    const renderSortDropdown = (value, onChange, options) => (
+        <div className="sort-control">
+            <label>Sort by:</label>
+            <select value={value} onChange={(e) => onChange(e.target.value)}>
+                <option value="default">Default</option>
+                {options.map(option => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+
     if (loading) {
         return <div className="questions-loading">Loading questions...</div>;
     }
 
+    const answeredSortOptions = [
+        { value: "az", label: "A-Z" },
+        { value: "za", label: "Z-A" },
+        { value: "newest", label: "Newest First" },
+        { value: "oldest", label: "Oldest First" },
+        { value: "highscore", label: "Highest Score" },
+        { value: "lowscore", label: "Lowest Score" }
+    ];
+
+    const unansweredSortOptions = [
+        { value: "az", label: "A-Z" },
+        { value: "za", label: "Z-A" }
+    ];
+
+    const submittedSortOptions = [
+        { value: "az", label: "A-Z" },
+        { value: "za", label: "Z-A" },
+        { value: "newest", label: "Newest First" },
+        { value: "oldest", label: "Oldest First" },
+        { value: "status", label: "By Status" }
+    ];
+
+    const sortedAnsweredQuestions = sortQuestions(answeredQuestions, answeredSort);
+    const sortedUnansweredQuestions = sortQuestions(unansweredQuestions, unansweredSort);
+    const sortedSubmittedQuestions = sortQuestions(submittedQuestions, submittedSort);
+
     return (
         <div className="profile-questions-container">
             {error && <p className="error-message">{error}</p>}
+            {feedback && <p className="success-message">{feedback}</p>}
             
             <h2>Profile Questions</h2>
             <p>Answer these questions to help others get to know you better.</p>
             
             <div className="questions-columns">
                 <div className="questions-column">
-                    <h3>Questions You've Answered</h3>
+                    <div className="section-header">
+                        <h3>Questions You've Answered</h3>
+                        {answeredQuestions.length > 0 && 
+                            renderSortDropdown(answeredSort, setAnsweredSort, answeredSortOptions)
+                        }
+                    </div>
                     {answeredQuestions.length === 0 ? (
                         <p className="no-questions">You haven't answered any questions yet.</p>
                     ) : (
                         <div className="questions-list">
-                            {answeredQuestions.map(question => (
-                                <div key={`answered-${question.id}`}>
-                                    {renderQuestion(question, true)}
-                                </div>
-                            ))}
+                            {(() => {
+                                // Create a map to deduplicate questions
+                                const uniqueQuestions = new Map();
+                                
+                                // Only add each question once by text
+                                sortedAnsweredQuestions.forEach(question => {
+                                    if (!uniqueQuestions.has(question.question)) {
+                                        uniqueQuestions.set(question.question, question);
+                                    }
+                                });
+                                
+                                // Return only unique questions
+                                return Array.from(uniqueQuestions.values()).map(question => (
+                                    <div key={`answered-${question.id}-${question.userScore}-${forceUpdate}`}>
+                                        {renderQuestion(question, true)}
+                                    </div>
+                                ));
+                            })()}
                         </div>
                     )}
                 </div>
                 
                 <div className="questions-column">
-                    <h3>Questions To Answer</h3>
+                    <div className="section-header">
+                        <h3>Questions To Answer</h3>
+                        {unansweredQuestions.length > 0 && 
+                            renderSortDropdown(unansweredSort, setUnansweredSort, unansweredSortOptions)
+                        }
+                    </div>
                     {unansweredQuestions.length === 0 ? (
                         <p className="no-questions">You've answered all available questions!</p>
                     ) : (
                         <div className="questions-list">
-                            {unansweredQuestions.map(question => (
+                            {sortedUnansweredQuestions.map(question => (
                                 <div key={`unanswered-${question.id}`}>
                                     {renderQuestion(question)}
                                 </div>
@@ -230,22 +520,26 @@ const ProfileQuestions = ({ userId }) => {
                     )}
                 </div>
 
-                <div className="submitted-questions-section">
-                <h3>Questions You’ve Submitted</h3>
-                {submittedQuestions.length === 0 ? (
-                    <p className="no-questions">You haven't submitted any questions yet.</p>
-                ) : (
-                    <div className="questions-list">
-                    {submittedQuestions.map(q => (
-                        <div key={q.id} className="question-card submitted-question">
-                        <h4>{q.question}</h4>
-                        <p>Status: <strong>{q.status || "pending"}</strong></p>
-                        </div>
-                    ))}
+                <div className="questions-column">
+                    <div className="section-header">
+                        <h3>Questions You've Submitted</h3>
+                        {submittedQuestions.length > 0 && 
+                            renderSortDropdown(submittedSort, setSubmittedSort, submittedSortOptions)
+                        }
                     </div>
-                )}
+                    {submittedQuestions.length === 0 ? (
+                        <p className="no-questions">You haven't submitted any questions yet.</p>
+                    ) : (
+                        <div className="questions-list">
+                        {sortedSubmittedQuestions.map(q => (
+                            <div key={q.id} className="question-card submitted-question">
+                            <h4>{q.question}</h4>
+                            <p>Status: <strong className={`status-${q.status || "pending"}`}>{q.status || "pending"}</strong></p>
+                            </div>
+                        ))}
+                        </div>
+                    )}
                 </div>
-
             </div>
         </div>
     );

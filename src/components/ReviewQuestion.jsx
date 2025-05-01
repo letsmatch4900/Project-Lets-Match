@@ -6,6 +6,7 @@ export default function ReviewQuestion() {
   const [questions, setQuestions] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [editedText, setEditedText] = useState("");
+  const [answer, setAnswer] = useState("");
 
   // Load questions from Firestore
   useEffect(() => {
@@ -18,7 +19,8 @@ export default function ReviewQuestion() {
 
   const handleSelectQuestion = (question) => {
     setSelectedQuestion(question);
-    setEditedText(question.question); // <<< FIXED: it's question.question not question.text
+    setEditedText(question.question);
+    setAnswer(question.answer || "");
   };
 
   const handleUpdateStatus = async (status) => {
@@ -26,7 +28,8 @@ export default function ReviewQuestion() {
 
     const updatedQuestion = {
       ...selectedQuestion,
-      question: editedText, // <<< Also fix this
+      question: editedText,
+      answer: answer,
       status,
     };
 
@@ -40,6 +43,7 @@ export default function ReviewQuestion() {
 
     setSelectedQuestion(null);
     setEditedText("");
+    setAnswer("");
   };
 
   const handleDeleteQuestion = async () => {
@@ -53,6 +57,7 @@ export default function ReviewQuestion() {
 
     setSelectedQuestion(null);
     setEditedText("");
+    setAnswer("");
   };
 
   return (
@@ -67,7 +72,7 @@ export default function ReviewQuestion() {
             className="question-item"
             onClick={() => handleSelectQuestion(q)}
           >
-            {q.question} {/* <<< FIXED HERE */}
+            {q.question}
           </button>
         ))}
       </div>
@@ -76,11 +81,24 @@ export default function ReviewQuestion() {
       {selectedQuestion && (
         <div className="edit-section">
           <h3>Edit Question</h3>
-          <input
-            type="text"
-            value={editedText}
-            onChange={(e) => setEditedText(e.target.value)}
-          />
+          <div className="input-group">
+            <label>Question:</label>
+            <input
+              type="text"
+              value={editedText}
+              onChange={(e) => setEditedText(e.target.value)}
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Answer:</label>
+            <textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="Type your answer here..."
+              rows="4"
+            />
+          </div>
 
           <div className="button-group">
             <button onClick={() => handleUpdateStatus("approved")} className="approve-btn">Approve</button>
