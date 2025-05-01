@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
 //import { FaUser } from "react-icons/fa";
-import { FaHome, FaShareAlt, FaCommentDots, FaHeart, FaUser, FaQuestion, FaCog, FaClipboardList, FaUsers, FaChartBar } from "react-icons/fa";
+import { FaHome, FaShareAlt, FaCommentDots, FaHeart, FaUser, FaQuestion, FaCog, FaClipboardList, FaUsers} from "react-icons/fa";
 import { auth } from "./firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
