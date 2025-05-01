@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, orderBy } from "firebase/firestore";
 import "./ProfileQuestions.css";
 
 const ProfileQuestions = ({ userId }) => {
