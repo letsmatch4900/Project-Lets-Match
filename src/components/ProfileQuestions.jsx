@@ -9,12 +9,8 @@ const ProfileQuestions = ({ userId }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [feedback, setFeedback] = useState("");
-    const [/*submittedQuestions*/, setSubmittedQuestions] = useState([]);
-    //const [setSubmittedQuestions] = useState([]);
     const [answeredSort, setAnsweredSort] = useState("default");
     const [unansweredSort, setUnansweredSort] = useState("default");
-    //const [submittedSort, setSubmittedSort] = useState("default");
-    //const [submittedSort] = useState("default");
     const [updatingQuestionId, setUpdatingQuestionId] = useState(null);
     const [forceUpdate, setForceUpdate] = useState(0);
     const [sliderValues, setSliderValues] = useState({});
@@ -29,6 +25,26 @@ const ProfileQuestions = ({ userId }) => {
         }));
     };
     
+    // Initialize slider values when questions load or change
+    useEffect(() => {
+        const initialSliderValues = {};
+        
+        // Initialize values for answered questions
+        answeredQuestions.forEach(question => {
+            initialSliderValues[question.id] = {
+                selfScore: question.userScore !== undefined ? parseFloat(question.userScore) : 5,
+                prefMin: question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
+                prefMax: question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
+                strictness: question.strictness !== undefined ? parseFloat(question.strictness) : 5
+            };
+        });
+        
+        // Keep existing slider values for questions that are currently being interacted with
+        setSliderValues(prev => ({
+            ...initialSliderValues,
+            ...prev // Preserve any current user edits
+        }));
+    }, [answeredQuestions, unansweredQuestions]);
 
     useEffect(() => {
         let isMounted = true;
@@ -103,6 +119,9 @@ const ProfileQuestions = ({ userId }) => {
                         answeredAt > userAnswersMap[answer.questionId].answeredAt) {
                         userAnswersMap[answer.questionId] = {
                             selfScore: answer.selfScore !== undefined ? answer.selfScore : 5,
+                            prefMin: answer.prefMin !== undefined ? answer.prefMin : 0,
+                            prefMax: answer.prefMax !== undefined ? answer.prefMax : 10,
+                            strictness: answer.strictness !== undefined ? answer.strictness : 5,
                             answeredAt: answeredAt,
                             answerId: doc.id
                         };
@@ -126,6 +145,9 @@ const ProfileQuestions = ({ userId }) => {
                             answered.push({
                                 ...question,
                                 userScore: userAnswersMap[question.id].selfScore,
+                                prefMin: userAnswersMap[question.id].prefMin,
+                                prefMax: userAnswersMap[question.id].prefMax,
+                                strictness: userAnswersMap[question.id].strictness,
                                 answeredAt: userAnswersMap[question.id].answeredAt,
                                 answerId: userAnswersMap[question.id].answerId
                             });
@@ -150,24 +172,6 @@ const ProfileQuestions = ({ userId }) => {
                                 score: q.userScore
                             }))
                         );
-                    }
-
-                    // 🔽 Add this block to fetch submitted questions
-                    try {
-                        const submittedQuery = query(
-                            collection(db, "questions"),
-                            where("submittedBy", "==", userId)
-                        );
-                        const submittedSnap = await getDocs(submittedQuery);
-                        const submitted = submittedSnap.docs.map(doc => ({ 
-                            id: doc.id, 
-                            ...doc.data(),
-                            submittedAt: doc.data().createdAt?.toDate() || new Date()
-                        }));
-                        setSubmittedQuestions(submitted);
-                    } catch (submittedError) {
-                        console.error("Error fetching submitted questions:", submittedError);
-                        // Don't fail the whole component if just this part fails
                     }
 
                     setLoading(false);
@@ -243,10 +247,21 @@ const ProfileQuestions = ({ userId }) => {
                 setUnansweredQuestions(prev => prev.filter(q => q.id !== questionId));
                 setAnsweredQuestions(prev => [...prev, {
                     ...answeredQuestion,
-                    ...answerData,
+                    userScore: score,
+                    prefMin,
+                    prefMax,
+                    strictness,
+                    answeredAt: now,
                     answerId: answerRef.id
                 }]);
             }
+    
+            // Clear this question's slider values
+            setSliderValues(prev => {
+                const newValues = {...prev};
+                delete newValues[questionId];
+                return newValues;
+            });
     
             setFeedback("Answer saved successfully!");
             setTimeout(() => setFeedback(""), 3000);
@@ -258,8 +273,7 @@ const ProfileQuestions = ({ userId }) => {
         }
     };
     
-
-    const handleUpdateAnswer = async (questionId, newScore) => {
+    const handleUpdateAnswer = async (questionId, score, prefMin, prefMax, strictness) => {
         try {
             setUpdatingQuestionId(questionId);
             setError("");
@@ -272,25 +286,30 @@ const ProfileQuestions = ({ userId }) => {
                 throw new Error("Question not found");
             }
             
-            console.log(`Updating question "${questionToUpdate.question}" with score: ${newScore}`);
+            console.log(`Updating question "${questionToUpdate.question}" with score: ${score}`);
+            
+            const answerData = {
+                selfScore: score,
+                prefMin,
+                prefMax,
+                strictness,
+                updatedAt: now
+            };
             
             // If we have an answerId, update that specific document
             if (questionToUpdate.answerId) {
                 const answerDocRef = doc(db, "answers", questionToUpdate.answerId);
-                await updateDoc(answerDocRef, {
-                    selfScore: newScore,
-                    updatedAt: now
-                });
+                await updateDoc(answerDocRef, answerData);
                 console.log(`Updated existing answer document: ${questionToUpdate.answerId}`);
             } else {
                 // If no answer document exists, create one
-                const answerData = {
+                const fullAnswerData = {
                     userId,
                     questionId,
-                    selfScore: newScore,
+                    ...answerData,
                     answeredAt: now
                 };
-                const newAnswerRef = await addDoc(collection(db, "answers"), answerData);
+                const newAnswerRef = await addDoc(collection(db, "answers"), fullAnswerData);
                 console.log(`Created new answer document: ${newAnswerRef.id}`);
                 // Update the question with the new answerId
                 questionToUpdate.answerId = newAnswerRef.id;
@@ -299,11 +318,20 @@ const ProfileQuestions = ({ userId }) => {
             // Update the user document with the updated answer
             const userDocRef = doc(db, "users", userId);
             await updateDoc(userDocRef, {
-                [`questionAnswers.${questionId}`]: newScore,
+                [`questionAnswers.${questionId}`]: {
+                    userId,
+                    questionId,
+                    selfScore: score,
+                    prefMin,
+                    prefMax,
+                    strictness,
+                    answeredAt: questionToUpdate.answeredAt || now,
+                    updatedAt: now
+                },
                 updatedAt: now
             });
             
-            console.log(`Updated user document with new score: ${newScore}`);
+            console.log(`Updated user document with new values`);
             
             // Create a new object for each question to ensure React detects the change
             setAnsweredQuestions(prev => 
@@ -311,13 +339,23 @@ const ProfileQuestions = ({ userId }) => {
                     if (q.id === questionId) {
                         return {
                             ...q,
-                            userScore: newScore,
+                            userScore: score,
+                            prefMin,
+                            prefMax,
+                            strictness,
                             answeredAt: now
                         };
                     }
                     return q;
                 })
             );
+            
+            // Clear this question's slider values to ensure fresh value next time
+            setSliderValues(prev => {
+                const newValues = {...prev};
+                delete newValues[questionId];
+                return newValues;
+            });
             
             // Force a component update
             setForceUpdate(prev => prev + 1);
@@ -355,11 +393,11 @@ const ProfileQuestions = ({ userId }) => {
         }
     };
 
-    
     const renderQuestion = (question, isAnswered = false) => {
         const scoreOptions = [0, 2.5, 5, 7.5, 10];
         const isUpdating = updatingQuestionId === question.id;
     
+        // Get current slider values or initialize with defaults
         const values = sliderValues[question.id] || {
             selfScore: isAnswered && question.userScore !== undefined ? parseFloat(question.userScore) : 5,
             prefMin: isAnswered && question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
@@ -368,12 +406,15 @@ const ProfileQuestions = ({ userId }) => {
         };
     
         const handleSubmit = () => {
+            // Get values from sliderValues state, or use defaults if not set
+            const currentValues = sliderValues[question.id] || values;
+            
             const {
                 selfScore = 5,
                 prefMin = 0,
                 prefMax = 10,
                 strictness = 5
-            } = sliderValues[question.id] || {};
+            } = currentValues;
         
             if (isAnswered) {
                 handleUpdateAnswer(question.id, selfScore, prefMin, prefMax, strictness);
@@ -382,7 +423,6 @@ const ProfileQuestions = ({ userId }) => {
             }
         };
         
-    
         const renderSlider = (label, field) => (
             <div className="slider-container">
                 <label>{label}</label>
@@ -432,8 +472,6 @@ const ProfileQuestions = ({ userId }) => {
         );
     };
     
-    
-
     const renderSortDropdown = (value, onChange, options) => (
         <div className="sort-control">
             <label>Sort by:</label>
@@ -466,17 +504,8 @@ const ProfileQuestions = ({ userId }) => {
         { value: "za", label: "Z-A" }
     ];
 
-    /*const submittedSortOptions = [
-        { value: "az", label: "A-Z" },
-        { value: "za", label: "Z-A" },
-        { value: "newest", label: "Newest First" },
-        { value: "oldest", label: "Oldest First" },
-        { value: "status", label: "By Status" }
-    ];*/
-
     const sortedAnsweredQuestions = sortQuestions(answeredQuestions, answeredSort);
     const sortedUnansweredQuestions = sortQuestions(unansweredQuestions, unansweredSort);
-    //const sortedSubmittedQuestions = sortQuestions(submittedQuestions, submittedSort);
 
     return (
         <div className="profile-questions-container">
