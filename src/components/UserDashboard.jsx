@@ -88,7 +88,7 @@ const UserDashboard = () => {
                     <button className="option-btn" onClick={() => navigate("/matches")}>
                         My matches
                     </button>
-                    <button className="option-btn" onClick={() => navigate("/feedback")}>
+                    <button className="option-btn" onClick={() => navigate("/user-feedback")}>
                         Feedback
                     </button>
                     <button className="option-btn" onClick={() => navigate("/share")}>
