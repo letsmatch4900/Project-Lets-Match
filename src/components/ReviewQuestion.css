@@ -8,8 +8,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
 }
 
+.question-container {
+    width: 100%;
+    margin-bottom: 10px;
+}
 
 /* Make sure text is visible */
 .question-item {
@@ -22,6 +27,14 @@
     width: 100%;
     text-align: left;
     transition: background-color 0.3s ease, color 0.3s ease;
+    border-radius: 4px;
+}
+
+/* Expanded state */
+.question-item.expanded {
+    background-color: #f0f7ff;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 /* Hover effect */
@@ -30,12 +43,39 @@
     color: #000;  /* Ensure visibility on hover */
 }
 
-.edit-section {
-    margin-top: 20px;
-    padding: 10px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+.inline-edit-section {
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-top: none;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.input-group {
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.input-group input, 
+.input-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: 15px;
 }
 
 .button-group button {
@@ -43,6 +83,7 @@
     padding: 8px 15px;
     border: none;
     cursor: pointer;
+    border-radius: 4px;
 }
 
 .approve-btn {
@@ -57,5 +98,10 @@
 
 .pending-btn {
     background-color: orange;
+    color: white;
+}
+
+.delete-btn {
+    background-color: #333;
     color: white;
 }
