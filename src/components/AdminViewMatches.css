@@ -1,0 +1,85 @@
+.admin-view-matches {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.user-search {
+  margin-bottom: 20px;
+  max-width: 500px;
+}
+
+.user-search input {
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.user-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.user-list li {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.user-list li:hover {
+  background-color: #f2f2f2;
+}
+
+.match-panel {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.user-info {
+  flex: 0 0 300px;
+  padding: 20px;
+  background-color: #fafafa;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+}
+
+.matches-list {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.scrollable-matches {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.match-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9;
+}
+
+@media (max-width: 768px) {
+  .match-panel {
+    flex-direction: column;
+  }
+
+  .user-info {
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    flex: none;
+  }
+}

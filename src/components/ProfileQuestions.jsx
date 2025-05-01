@@ -9,12 +9,26 @@ const ProfileQuestions = ({ userId }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [feedback, setFeedback] = useState("");
-    const [submittedQuestions, setSubmittedQuestions] = useState([]);
+    const [/*submittedQuestions*/, setSubmittedQuestions] = useState([]);
+    //const [setSubmittedQuestions] = useState([]);
     const [answeredSort, setAnsweredSort] = useState("default");
     const [unansweredSort, setUnansweredSort] = useState("default");
-    const [submittedSort, setSubmittedSort] = useState("default");
+    //const [submittedSort, setSubmittedSort] = useState("default");
+    //const [submittedSort] = useState("default");
     const [updatingQuestionId, setUpdatingQuestionId] = useState(null);
     const [forceUpdate, setForceUpdate] = useState(0);
+    const [sliderValues, setSliderValues] = useState({});
+
+    const updateSliderValue = (questionId, field, value) => {
+        setSliderValues(prev => ({
+            ...prev,
+            [questionId]: {
+                ...prev[questionId],
+                [field]: value
+            }
+        }));
+    };
+    
 
     useEffect(() => {
         let isMounted = true;
@@ -199,55 +213,41 @@ const ProfileQuestions = ({ userId }) => {
         };
     }, [userId]);
 
-    const handleAnswerQuestion = async (questionId, score) => {
+    const handleAnswerQuestion = async (questionId, score, prefMin, prefMax, strictness) => {
         try {
             setUpdatingQuestionId(questionId);
             setError("");
             const now = new Date();
-            
-            console.log(`Answering question with ID ${questionId} with score: ${score}`);
-            
-            // First, create a proper record in the answers collection
+    
             const answerData = {
                 userId,
                 questionId,
                 selfScore: score,
+                prefMin,
+                prefMax,
+                strictness,
                 answeredAt: now
             };
-            
-            // Add to the answers collection
+    
             const answerRef = await addDoc(collection(db, "answers"), answerData);
-            console.log(`Created new answer document: ${answerRef.id}`);
-            
-            // Update the user document with the new answer
+    
             const userDocRef = doc(db, "users", userId);
             await updateDoc(userDocRef, {
-                [`questionAnswers.${questionId}`]: score,
+                [`questionAnswers.${questionId}`]: answerData,
                 updatedAt: now
             });
-            
-            console.log(`Updated user document with score: ${score}`);
-            
-            // Update local state
+    
+            // Update state
             const answeredQuestion = unansweredQuestions.find(q => q.id === questionId);
             if (answeredQuestion) {
                 setUnansweredQuestions(prev => prev.filter(q => q.id !== questionId));
-                
-                // Check if a similar question already exists in answeredQuestions
-                const questionText = answeredQuestion.question;
-                const isDuplicate = answeredQuestions.some(q => q.question === questionText);
-                
-                // Only add to answered if not a duplicate
-                if (!isDuplicate) {
-                    setAnsweredQuestions(prev => [...prev, {
-                        ...answeredQuestion, 
-                        userScore: score,
-                        answeredAt: now,
-                        answerId: answerRef.id
-                    }]);
-                }
+                setAnsweredQuestions(prev => [...prev, {
+                    ...answeredQuestion,
+                    ...answerData,
+                    answerId: answerRef.id
+                }]);
             }
-            
+    
             setFeedback("Answer saved successfully!");
             setTimeout(() => setFeedback(""), 3000);
         } catch (err) {
@@ -257,6 +257,7 @@ const ProfileQuestions = ({ userId }) => {
             setUpdatingQuestionId(null);
         }
     };
+    
 
     const handleUpdateAnswer = async (questionId, newScore) => {
         try {
@@ -358,62 +359,73 @@ const ProfileQuestions = ({ userId }) => {
     const renderQuestion = (question, isAnswered = false) => {
         const scoreOptions = [0, 2.5, 5, 7.5, 10];
         const isUpdating = updatingQuestionId === question.id;
-        // Ensure we always have a valid score value, even if userScore is undefined
-        const currentValue = isAnswered && question.userScore !== undefined ? 
-            parseFloat(question.userScore) : 5;
-        
-        // For debugging
-        if (isAnswered) {
-            console.log(`Rendering answered question: "${question.question.substring(0, 30)}..." with score: ${currentValue}`);
-        }
-        
-        return (
-            <div className={`question-card ${isUpdating ? 'updating' : ''}`} 
-                 data-question-id={question.id}
-                 data-current-score={currentValue}
-                 data-force-update={forceUpdate}>
-                <h3>{question.question}</h3>
-                <div className="slider-container">
-                    <input 
-                        type="range" 
-                        min="0" 
-                        max="10" 
-                        step="2.5"
-                        value={currentValue}
-                        onChange={(e) => {
-                            const newScore = parseFloat(e.target.value);
-                            if (isAnswered) {
-                                handleUpdateAnswer(question.id, newScore);
-                            } else {
-                                handleAnswerQuestion(question.id, newScore);
-                            }
-                        }}
-                        className="slider"
-                        disabled={isUpdating}
-                    />
-                    <div className="slider-labels">
-                        {scoreOptions.map(score => (
-                            <div key={score} className="label-container">
-                                <div className={`tick ${currentValue === score ? "active-tick" : ""}`}></div>
-                                {question.labels && question.labels[score] && (
-                                    <span className="label-text">{question.labels[score]}</span>
-                                )}
-                                <span className={`score-value ${currentValue === score ? "active-score" : ""}`}>{score}</span>
-                            </div>
-                        ))}
-                    </div>
-                    {isAnswered && (
-                        <div className="answer-metadata">
-                            <span>
-                              Current value: {currentValue} | 
-                              Last updated: {question.answeredAt?.toLocaleDateString() || 'Unknown'}
-                            </span>
+    
+        const values = sliderValues[question.id] || {
+            selfScore: isAnswered && question.userScore !== undefined ? parseFloat(question.userScore) : 5,
+            prefMin: isAnswered && question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
+            prefMax: isAnswered && question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
+            strictness: isAnswered && question.strictness !== undefined ? parseFloat(question.strictness) : 5
+        };
+    
+        const handleSubmit = () => {
+            const { selfScore, prefMin, prefMax, strictness } = values;
+            if (isAnswered) {
+                handleUpdateAnswer(question.id, selfScore, prefMin, prefMax, strictness);
+            } else {
+                handleAnswerQuestion(question.id, selfScore, prefMin, prefMax, strictness);
+            }
+        };
+    
+        const renderSlider = (label, field) => (
+            <div className="slider-container">
+                <label>{label}</label>
+                <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="2.5"
+                    value={values[field]}
+                    onChange={(e) => updateSliderValue(question.id, field, parseFloat(e.target.value))}
+                    className="slider"
+                    disabled={isUpdating}
+                />
+                <div className="slider-labels">
+                    {scoreOptions.map(score => (
+                        <div key={score} className="label-container">
+                            <span className={`score-value ${values[field] === score ? "active-score" : ""}`}>{score}</span>
                         </div>
-                    )}
+                    ))}
                 </div>
             </div>
         );
+    
+        return (
+            <div className={`question-card ${isUpdating ? 'updating' : ''}`} 
+                 data-question-id={question.id}
+                 data-force-update={forceUpdate}>
+                <h3>{question.question}</h3>
+    
+                {renderSlider("Self Score", "selfScore")}
+                {renderSlider("Preferred Min", "prefMin")}
+                {renderSlider("Preferred Max", "prefMax")}
+                {renderSlider("Strictness", "strictness")}
+    
+                <button onClick={handleSubmit} disabled={isUpdating}>
+                    {isAnswered ? "Update Answer" : "Submit Answer"}
+                </button>
+    
+                {isAnswered && (
+                    <div className="answer-metadata">
+                        <span>
+                            Last updated: {question.answeredAt?.toLocaleDateString() || 'Unknown'}
+                        </span>
+                    </div>
+                )}
+            </div>
+        );
     };
+    
+    
 
     const renderSortDropdown = (value, onChange, options) => (
         <div className="sort-control">
@@ -447,17 +459,17 @@ const ProfileQuestions = ({ userId }) => {
         { value: "za", label: "Z-A" }
     ];
 
-    const submittedSortOptions = [
+    /*const submittedSortOptions = [
         { value: "az", label: "A-Z" },
         { value: "za", label: "Z-A" },
         { value: "newest", label: "Newest First" },
         { value: "oldest", label: "Oldest First" },
         { value: "status", label: "By Status" }
-    ];
+    ];*/
 
     const sortedAnsweredQuestions = sortQuestions(answeredQuestions, answeredSort);
     const sortedUnansweredQuestions = sortQuestions(unansweredQuestions, unansweredSort);
-    const sortedSubmittedQuestions = sortQuestions(submittedQuestions, submittedSort);
+    //const sortedSubmittedQuestions = sortQuestions(submittedQuestions, submittedSort);
 
     return (
         <div className="profile-questions-container">

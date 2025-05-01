@@ -29,6 +29,9 @@ const BuildProfile = () => {
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
     const [userId, setUserId] = useState(null);
+    // Inside ProfileQuestions component
+//const [answers, setAnswers] = useState({});
+
 
     useEffect(() => {
         const fetchProfile = async (user) => {

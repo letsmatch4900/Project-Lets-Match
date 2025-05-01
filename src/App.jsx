@@ -21,6 +21,7 @@ import GuestLanding from "./components/GuestLanding";
 import AnswerQuestion from "./components/AnswerQuestion";
 import MatchesPage from "./components/MatchesPage";
 import About from "./components/About";
+import AdminViewMatches from "./components/AdminViewMatches";
 import "./App.css";
 
 // Bottom Navigation Component
@@ -83,6 +84,7 @@ function App() {
                     {/* ✅ Routes for admin and user dashboards */}
                     <Route path="/admin-dashboard" element={<AdminDashboard />} />
                     <Route path="/user-dashboard" element={<UserDashboard />} />
+                    <Route path="/admin-view-matches" element={<AdminViewMatches />} />
                 </Routes>
                 {user && <BottomNav />}
             </div>
