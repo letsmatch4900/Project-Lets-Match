@@ -6,7 +6,7 @@ import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
-    const [user, setUser] = useState(null);  // ✅ Now setUser is defined
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -37,11 +37,9 @@ const AdminDashboard = () => {
             <div className="main-content">
                 <h2>Home</h2>
                 <p>Welcome, {user ? user.email : "Admin"}</p>
-                <button className="option-btn">Category</button>
                 <button className="option-btn" onClick={() => navigate("/review-question")}>Review questions</button>
-                <button className="option-btn" onClick={() => navigate("/view-matches")}>View matches</button>
-                <button className="option-btn" onClick={() => navigate("/admin-feedback")}>See feedback</button>
                 <button className="option-btn" onClick={() => navigate("/admin-view-matches")}>User Profiles</button>
+                <button className="option-btn" onClick={() => navigate("/admin-feedback")}>See feedback</button>
             </div>
         </div>
     );

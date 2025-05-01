@@ -36,6 +36,19 @@
     color: #007bff;
 }
 
+/* Add styling for the admin bottom nav */
+.admin-bottom-nav {
+    background-color: #d32f2f; /* Red background for admin nav */
+}
+
+.admin-bottom-nav button {
+    color: white; /* White icons for better contrast */
+}
+
+.admin-bottom-nav button:hover {
+    color: #ffcdd2; /* Light red on hover */
+}
+
 /* About page styles */
 .about-content {
     padding: 15px;
@@ -45,4 +58,14 @@
 
 .about-content p {
     margin-bottom: 15px;
+}
+
+/* Loading state for protected routes */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #666;
 }

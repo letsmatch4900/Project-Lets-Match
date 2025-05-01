@@ -26,14 +26,14 @@ const Login = () => {
       await user.reload(); // Reload user data
 
       if (user.emailVerified) {
-        // Fetch user role from Firestore
+        // Fetch user role from Firestore (from 'users' collection)
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
-          const role = userData.role; // Retrieve the role field
-
+          const role = userData.role || "user"; // Default to user if role not specified
+          
           alert("Login successful!");
 
           // Navigate based on role
@@ -48,7 +48,7 @@ const Login = () => {
         }
       } else {
         await auth.signOut();
-        setError("This email isn’t associated with any account.");
+        setError("This email isn't associated with any account.");
       }
     } catch (err) {
       setError(err.message);

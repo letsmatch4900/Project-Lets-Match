@@ -1,0 +1,29 @@
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #666;
+  background-color: #f8f9fa;
+}
+
+.loading::after {
+  content: "...";
+  animation: dots 1.5s infinite;
+  display: inline-block;
+  width: 24px;
+  text-align: left;
+}
+
+@keyframes dots {
+  0%, 20% {
+    content: ".";
+  }
+  40% {
+    content: "..";
+  }
+  60%, 100% {
+    content: "...";
+  }
+} 

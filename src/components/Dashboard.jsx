@@ -19,16 +19,16 @@ const Dashboard = () => {
             }
 
             try {
-                // 🔄 Check the 'roles' collection (not 'users')
-                const docRef = doc(db, "roles", user.uid);
+                // Check the 'users' collection for role
+                const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
 
                 let role = "user"; // default
                 if (docSnap.exists()) {
-                    role = docSnap.data().role;
+                    role = docSnap.data().role || "user";
                 }
 
-                // 🚀 Redirect based on role
+                // Redirect based on role
                 if (role === "admin") {
                     navigate("/admin-dashboard");
                 } else {
