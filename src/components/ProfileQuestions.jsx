@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import "./ProfileQuestions.css";
 
 const ProfileQuestions = ({ userId }) => {
@@ -8,6 +8,7 @@ const ProfileQuestions = ({ userId }) => {
     const [unansweredQuestions, setUnansweredQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [submittedQuestions, setSubmittedQuestions] = useState([]);
 
     useEffect(() => {
         let isMounted = true;
@@ -43,24 +44,30 @@ const ProfileQuestions = ({ userId }) => {
                 console.log("Unique questions after filtering:", questionsData.length);
                 
                 // Fetch user's answers
-                const userDocRef = doc(db, "users", userId);
-                const userDoc = await getDoc(userDocRef);
-                if (!isMounted) return;
-                
-                const userData = userDoc.exists() ? userDoc.data() : {};
-                const userAnswers = userData.questionAnswers || {};
+                const answersSnap = await getDocs(query(
+                    collection(db, "answers"),
+                    where("userId", "==", userId)
+                  ));
+                  
+                  const userAnswersMap = {};
+                  answersSnap.forEach(doc => {
+                    const answer = doc.data();
+                    userAnswersMap[answer.questionId] = answer.selfScore;
+                  });
+                  
                 
                 // Split questions into answered and unanswered
                 const answered = [];
                 const unanswered = [];
                 
                 questionsData.forEach(question => {
-                    if (userAnswers[question.id] !== undefined) {
+                    if (userAnswersMap[question.id] !== undefined) {
                         answered.push({
-                            ...question,
-                            userScore: userAnswers[question.id]
+                          ...question,
+                          userScore: userAnswersMap[question.id]
                         });
-                    } else {
+                      }
+                       else {
                         unanswered.push(question);
                     }
                 });
@@ -69,10 +76,21 @@ const ProfileQuestions = ({ userId }) => {
                 console.log("Unanswered questions:", unanswered.length);
                 
                 if (isMounted) {
-                    setAnsweredQuestions(answered);
-                    setUnansweredQuestions(unanswered);
-                    setLoading(false);
+                setAnsweredQuestions(answered);
+                setUnansweredQuestions(unanswered);
+
+                // 🔽 Add this block to fetch submitted questions
+                const submittedQuery = query(
+                    collection(db, "questions"),
+                    where("submittedBy", "==", userId)
+                );
+                const submittedSnap = await getDocs(submittedQuery);
+                const submitted = submittedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setSubmittedQuestions(submitted);
+
+                setLoading(false);
                 }
+
             } catch (err) {
                 if (isMounted) {
                     console.error("Error fetching questions:", err);
@@ -211,6 +229,23 @@ const ProfileQuestions = ({ userId }) => {
                         </div>
                     )}
                 </div>
+
+                <div className="submitted-questions-section">
+                <h3>Questions You’ve Submitted</h3>
+                {submittedQuestions.length === 0 ? (
+                    <p className="no-questions">You haven't submitted any questions yet.</p>
+                ) : (
+                    <div className="questions-list">
+                    {submittedQuestions.map(q => (
+                        <div key={q.id} className="question-card submitted-question">
+                        <h4>{q.question}</h4>
+                        <p>Status: <strong>{q.status || "pending"}</strong></p>
+                        </div>
+                    ))}
+                    </div>
+                )}
+                </div>
+
             </div>
         </div>
     );
