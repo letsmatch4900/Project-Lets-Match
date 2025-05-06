@@ -448,7 +448,7 @@ const ProfileQuestions = ({ userId }) => {
                     {scoreOptions.map(score => (
                         <div key={score} className="label-container">
                             <span className={`score-value ${values[field] === score ? "active-score" : ""}`}>{score}</span>
-                            <span className="label-text">{getLabelText(score)}</span>
+                            {field !== "strictness" && <span className="label-text">{getLabelText(score)}</span>}
                         </div>
                     ))}
                 </div>
