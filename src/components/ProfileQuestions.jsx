@@ -423,6 +423,14 @@ const ProfileQuestions = ({ userId }) => {
             }
         };
         
+        // Get label text for each score value
+        const getLabelText = (score) => {
+            if (question.labels && question.labels[score] !== undefined && question.labels[score] !== null && question.labels[score] !== '') {
+                return question.labels[score];
+            }
+            return '';
+        };
+        
         const renderSlider = (label, field) => (
             <div className="slider-container">
                 <label>{label}</label>
@@ -440,6 +448,7 @@ const ProfileQuestions = ({ userId }) => {
                     {scoreOptions.map(score => (
                         <div key={score} className="label-container">
                             <span className={`score-value ${values[field] === score ? "active-score" : ""}`}>{score}</span>
+                            <span className="label-text">{getLabelText(score)}</span>
                         </div>
                     ))}
                 </div>
