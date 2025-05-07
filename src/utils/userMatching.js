@@ -10,16 +10,25 @@ const userMatchingCore = {
    * @returns {number} - Match score between 0 and 1
    */
   calculateOneWayQuestionScore: function(potentialPartnerSelf, prefersPartnerMin, prefersPartnerMax, strictness) {
-    if (potentialPartnerSelf >= prefersPartnerMin && potentialPartnerSelf <= prefersPartnerMax) {
-      return 1;
+    const inRange = potentialPartnerSelf >= prefersPartnerMin && potentialPartnerSelf <= prefersPartnerMax;
+    const midpoint = (prefersPartnerMin + prefersPartnerMax) / 2;
+    const exactMatch = potentialPartnerSelf === midpoint;
+  
+    if (exactMatch) return 1; // ✅ perfect alignment
+    if (inRange) {
+      // Slightly reward in-range but not perfect
+      return 0.9 * ((10 - strictness) / 10) + 0.1;
     }
-
+  
+    // Outside range: use existing penalty logic
     const distanceMin = Math.abs(potentialPartnerSelf - prefersPartnerMin);
     const distanceMax = Math.abs(potentialPartnerSelf - prefersPartnerMax);
     const minDistance = Math.min(distanceMin, distanceMax);
-
+  
     return (1 - (minDistance / 10)) * ((10 - strictness) / 10);
-  },
+  }
+  
+  ,
 
   /**
    * Calculate geometric mean of scores

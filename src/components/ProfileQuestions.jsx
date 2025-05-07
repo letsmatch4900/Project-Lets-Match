@@ -424,36 +424,62 @@ const ProfileQuestions = ({ userId }) => {
         };
         
         // Get label text for each score value
+        /*
         const getLabelText = (score) => {
             if (question.labels && question.labels[score] !== undefined && question.labels[score] !== null && question.labels[score] !== '') {
                 return question.labels[score];
             }
             return '';
-        };
+        };*/
         
-        const renderSlider = (label, field) => (
-            <div className="slider-container">
+        const renderSlider = (label, field) => {
+            //const scoreOptions = [0, 2.5, 5, 7.5, 10];
+            const isUpdating = updatingQuestionId === question.id;
+          
+            // Retrieve current slider values or set defaults
+            const values = sliderValues[question.id] || {
+              selfScore: isAnswered && question.userScore !== undefined ? parseFloat(question.userScore) : 5,
+              prefMin: isAnswered && question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
+              prefMax: isAnswered && question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
+              strictness: isAnswered && question.strictness !== undefined ? parseFloat(question.strictness) : 5
+            };
+          
+            // Function to get label text for a specific score
+            const getLabelText = (score) => {
+              return question.labels && question.labels[score] ? question.labels[score] : '';
+            };
+          
+            return (
+              <div className="slider-container">
                 <label>{label}</label>
                 <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    step="2.5"
-                    value={values[field]}
-                    onChange={(e) => updateSliderValue(question.id, field, parseFloat(e.target.value))}
-                    className="slider"
-                    disabled={isUpdating}
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="2.5"
+                  value={values[field]}
+                  onChange={(e) => updateSliderValue(question.id, field, parseFloat(e.target.value))}
+                  className="slider"
+                  disabled={isUpdating}
                 />
                 <div className="slider-labels">
-                    {scoreOptions.map(score => (
-                        <div key={score} className="label-container">
-                            <span className={`score-value ${values[field] === score ? "active-score" : ""}`}>{score}</span>
-                            {field !== "strictness" && <span className="label-text">{getLabelText(score)}</span>}
-                        </div>
-                    ))}
+                  {scoreOptions.map((score) => (
+                    <div key={score} className="label-container">
+                      <span className={`score-value ${values[field] === score ? 'active-score' : ''}`}>
+                        {score}
+                      </span>
+                      {field === 'selfScore' && (
+                        <span className="label-text">{getLabelText(score)}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-            </div>
-        );
+              </div>
+            );
+          };
+          
+          
+          
     
         return (
             <div className={`question-card ${isUpdating ? 'updating' : ''}`} 
