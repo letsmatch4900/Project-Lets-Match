@@ -33,19 +33,28 @@ export default function AdminViewMatches() {
       const matchList = await Promise.all(snapshot.docs.map(async docSnap => {
         const score = docSnap.data().score;
         const matchId = docSnap.id;
-
+      
         const userSnap = await getDoc(doc(db, "users", matchId));
-        const userData = userSnap.exists() ? userSnap.data() : {};
-
+        if (!userSnap.exists()) return null;
+      
+        const userData = userSnap.data();
+      
         return {
           id: matchId,
           score,
           ...userData
         };
       }));
-
-      matchList.sort((a, b) => b.score - a.score);
-      setMatches(matchList);
+      
+      // 🧹 Remove nulls (from missing users)
+      const filteredMatches = matchList.filter(Boolean);
+      
+      // 🧠 Sort by match score
+      filteredMatches.sort((a, b) => b.score - a.score);
+      
+      // ✅ Save to state
+      setMatches(filteredMatches);
+      
     };
 
     fetchMatches();
@@ -53,9 +62,8 @@ export default function AdminViewMatches() {
 
   const filteredUsers = users.filter(user =>
     (user.email || "").toLowerCase().includes(search.toLowerCase()) ||
-    (user.username || "").toLowerCase().includes(search.toLowerCase()) ||
-    (user.firstName || "").toLowerCase().includes(search.toLowerCase()) ||
-    (user.lastName || "").toLowerCase().includes(search.toLowerCase())
+    (user.nickName || "").toLowerCase().includes(search.toLowerCase()) ||
+    (user.fullName || "").toLowerCase().includes(search.toLowerCase()) 
   );
 
   return (
@@ -63,26 +71,26 @@ export default function AdminViewMatches() {
       <div className="user-search">
         <input
           type="text"
-          placeholder="Search by username, email, etc."
+          placeholder="Search by nickname, email, etc."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <ul className="user-list">
           {filteredUsers.map(user => (
             <li key={user.id} onClick={() => setSelectedUser(user)}>
-              {user.nickname || user.email || "Unnamed"}
+              {user.nickName || "Unnamed"}
             </li>
           ))}
         </ul>
+
       </div>
 
       {selectedUser && (
         <div className="match-panel">
           <div className="user-info">
-            <h3>{selectedUser.nickname || selectedUser.email}</h3>
+            <h3>{selectedUser.nickName || selectedUser.email}</h3>
             <p><strong>Email:</strong> {selectedUser.email}</p>
-            <p><strong>First Name:</strong> {selectedUser.firstName}</p>
-            <p><strong>Last Name:</strong> {selectedUser.lastName}</p>
+            <p><strong>Full Name:</strong> {selectedUser.fullName}</p>
             {/* Add any other fields you'd like */}
           </div>
 
@@ -91,11 +99,10 @@ export default function AdminViewMatches() {
             <div className="scrollable-matches">
               {matches.map(match => (
                 <div key={match.id} className="match-card">
-                  <p><strong>{match.nickname || match.email}</strong></p>
+                  <p><strong>{match.nickName || match.email}</strong></p>
                   <p>Match Score: {(match.score * 100).toFixed(1)}%</p>
                   <p>Email: {match.email}</p>
-                  <p>First Name: {match.firstName}</p>
-                  <p>Last Name: {match.lastName}</p>
+                  <p>Full Name: {match.fullName}</p>
                 </div>
               ))}
             </div>
