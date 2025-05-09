@@ -99,6 +99,40 @@
     margin-top: 18px;
 }
 
+.slider-container label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #444;
+    font-size: 0.9rem;
+}
+
+.action-button {
+    margin-top: 20px;
+    padding: 8px 16px;
+    background-color: #0078ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:hover {
+    background-color: #0066df;
+}
+
+.action-button:active {
+    transform: scale(0.98);
+}
+
+.action-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
 .slider {
     width: 100%;
     margin-bottom: 12px;
@@ -295,4 +329,140 @@
     .sort-control select {
         flex-grow: 1;
     }
+}
+
+/* Multi-range slider styles */
+.multi-range-container {
+    position: relative;
+    height: 40px;
+    margin-bottom: 18px;
+    width: 100%;
+    background-color: transparent;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+}
+
+.slider-track {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background-color: #e0e0e0;
+    border-radius: 3px;
+    z-index: 1;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.slider-range {
+    position: absolute;
+    height: 6px;
+    background-color: #0078ff;
+    border-radius: 3px;
+    z-index: 2;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: left 0.15s ease, width 0.15s ease;
+}
+
+.thumb {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    -webkit-appearance: none;
+    pointer-events: none;
+    appearance: none;
+    background: transparent;
+    margin: 0;
+}
+
+.thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #0078ff;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: auto;
+    opacity: 1;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.thumb::-webkit-slider-runnable-track {
+    height: 6px;
+    background: transparent;
+    border: none;
+}
+
+.thumb::-webkit-slider-thumb:hover,
+.thumb::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+    background: #0066df;
+}
+
+.thumb::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #0078ff;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: auto;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    opacity: 1;
+}
+
+.thumb::-moz-range-track {
+    height: 6px;
+    background: transparent;
+    border: none;
+}
+
+.thumb::-moz-range-thumb:hover,
+.thumb::-moz-range-thumb:active {
+    transform: scale(1.1);
+    background: #0066df;
+}
+
+.thumb-left {
+    z-index: 6;
+}
+
+.thumb-right {
+    z-index: 5;
+}
+
+/* Add active state for when the thumbs are being dragged */
+.thumb:active::-webkit-slider-thumb,
+.thumb:active::-moz-range-thumb {
+    background: #0066df;
+    transform: scale(1.15);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Style for the range labels in the multirange to match other sliders */
+.multirange-values {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.range-value {
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s ease, font-weight 0.15s ease;
+}
+
+.range-value.active {
+    color: #0078ff;
+    font-weight: 700;
 } 

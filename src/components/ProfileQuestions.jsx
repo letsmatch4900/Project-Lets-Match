@@ -393,6 +393,112 @@ const ProfileQuestions = ({ userId }) => {
         }
     };
 
+    const MultiRangeSlider = ({ min, max, minVal, maxVal, onChange, disabled }) => {
+        const minValRef = React.useRef(minVal);
+        const maxValRef = React.useRef(maxVal);
+        const range = React.useRef(null);
+        const [minPercent, setMinPercent] = React.useState(0);
+        const [maxPercent, setMaxPercent] = React.useState(0);
+        const [isDragging, setIsDragging] = React.useState(false);
+
+        // Convert to percentage
+        useEffect(() => {
+            const minPercent = ((minVal - min) / (max - min)) * 100;
+            const maxPercent = ((maxVal - min) / (max - min)) * 100;
+
+            setMinPercent(minPercent);
+            setMaxPercent(maxPercent);
+        }, [minVal, maxVal, min, max]);
+
+        // Keep track of current values in refs for event handlers
+        useEffect(() => {
+            minValRef.current = minVal;
+            maxValRef.current = maxVal;
+        }, [minVal, maxVal]);
+
+        // Add global mouse event listeners when dragging
+        useEffect(() => {
+            const handleMouseUp = () => {
+                if (isDragging) {
+                    setIsDragging(false);
+                }
+            };
+            
+            if (isDragging) {
+                window.addEventListener('mouseup', handleMouseUp);
+                window.addEventListener('touchend', handleMouseUp);
+            }
+            
+            return () => {
+                window.removeEventListener('mouseup', handleMouseUp);
+                window.removeEventListener('touchend', handleMouseUp);
+            };
+        }, [isDragging]);
+
+        // Generate values for ticks
+        const scoreOptions = [0, 2.5, 5, 7.5, 10];
+        
+        return (
+            <div className="slider-container">
+                <div className="multi-range-container">
+                    <div className="slider-track">
+                        <div
+                            ref={range}
+                            className="slider-range"
+                            style={{
+                                left: `${minPercent}%`,
+                                width: `${maxPercent - minPercent}%`
+                            }}
+                        />
+                    </div>
+                    <input
+                        type="range"
+                        min={min}
+                        max={max}
+                        step="2.5"
+                        value={minVal}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (value <= maxVal) {
+                                onChange([value, maxVal]);
+                            }
+                        }}
+                        onMouseDown={() => setIsDragging(true)}
+                        onTouchStart={() => setIsDragging(true)}
+                        className="thumb thumb-left"
+                        disabled={disabled}
+                    />
+                    <input
+                        type="range"
+                        min={min}
+                        max={max}
+                        step="2.5"
+                        value={maxVal}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (value >= minVal) {
+                                onChange([minVal, value]);
+                            }
+                        }}
+                        onMouseDown={() => setIsDragging(true)}
+                        onTouchStart={() => setIsDragging(true)}
+                        className="thumb thumb-right"
+                        disabled={disabled}
+                    />
+                </div>
+                <div className="slider-labels">
+                    {scoreOptions.map((score) => (
+                        <div key={score} className="label-container">
+                            <span className={`score-value ${(score === minVal || score === maxVal) ? 'active-score' : ''}`}>
+                                {score}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     const renderQuestion = (question, isAnswered = false) => {
         const scoreOptions = [0, 2.5, 5, 7.5, 10];
         const isUpdating = updatingQuestionId === question.id;
@@ -423,17 +529,7 @@ const ProfileQuestions = ({ userId }) => {
             }
         };
         
-        // Get label text for each score value
-        /*
-        const getLabelText = (score) => {
-            if (question.labels && question.labels[score] !== undefined && question.labels[score] !== null && question.labels[score] !== '') {
-                return question.labels[score];
-            }
-            return '';
-        };*/
-        
         const renderSlider = (label, field) => {
-            //const scoreOptions = [0, 2.5, 5, 7.5, 10];
             const isUpdating = updatingQuestionId === question.id;
           
             // Retrieve current slider values or set defaults
@@ -476,11 +572,26 @@ const ProfileQuestions = ({ userId }) => {
                 </div>
               </div>
             );
-          };
-          
-          
-          
-    
+        };
+        
+        const handlePrefRangeChange = ([min, max]) => {
+            // Don't allow min and max to be the same value
+            let finalMin = min;
+            let finalMax = max;
+            
+            if (min === max) {
+                // If they're the same, adjust one of them
+                if (max < 10) {
+                    finalMax = max + 2.5;
+                } else if (min > 0) {
+                    finalMin = min - 2.5;
+                }
+            }
+            
+            updateSliderValue(question.id, 'prefMin', finalMin);
+            updateSliderValue(question.id, 'prefMax', finalMax);
+        };
+
         return (
             <div className={`question-card ${isUpdating ? 'updating' : ''}`} 
                  data-question-id={question.id}
@@ -488,11 +599,22 @@ const ProfileQuestions = ({ userId }) => {
                 <h3>{question.question}</h3>
     
                 {renderSlider("Self Score", "selfScore")}
-                {renderSlider("Preferred Min", "prefMin")}
-                {renderSlider("Preferred Max", "prefMax")}
+                
+                <div className="slider-container">
+                    <label>Preferred Range</label>
+                    <MultiRangeSlider
+                        min={0}
+                        max={10}
+                        minVal={values.prefMin}
+                        maxVal={values.prefMax}
+                        onChange={handlePrefRangeChange}
+                        disabled={isUpdating}
+                    />
+                </div>
+
                 {renderSlider("Strictness", "strictness")}
-    
-                <button onClick={handleSubmit} disabled={isUpdating}>
+
+                <button onClick={handleSubmit} disabled={isUpdating} className="action-button">
                     {isAnswered ? "Update Answer" : "Submit Answer"}
                 </button>
     
