@@ -13,6 +13,7 @@ export default function ReviewQuestion() {
   const [questions, setQuestions] = useState([]);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [editFields, setEditFields] = useState({});
+  const [previewScore, setPreviewScore] = useState(5);
 
   // Load questions from Firestore
   useEffect(() => {
@@ -33,7 +34,14 @@ export default function ReviewQuestion() {
       setSelectedQuestionId(question.id);
       setEditFields({
         question: question.question,
-        answer: question.answer || ""
+        answer: question.answer || "",
+        labels: question.labels || {
+          0: "",
+          2.5: "",
+          5: "",
+          7.5: "",
+          10: ""
+        }
       });
     }
   };
@@ -46,6 +54,7 @@ export default function ReviewQuestion() {
       ...selectedQuestion,
       question: editFields.question,
       answer: editFields.answer,
+      labels: editFields.labels,
       status,
     };
 
@@ -81,6 +90,17 @@ export default function ReviewQuestion() {
     setEditFields(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  // Handle label changes
+  const handleLabelChange = (score, value) => {
+    setEditFields(prev => ({
+      ...prev,
+      labels: {
+        ...prev.labels,
+        [score]: value
+      }
     }));
   };
 
@@ -124,6 +144,49 @@ export default function ReviewQuestion() {
                   placeholder="Type your answer here..."
                   rows="4"
                 />
+              </div>
+
+              {/* Slider Labels Input */}
+              <div className="label-inputs">
+                <label>Slider Labels:</label>
+                {[0, 2.5, 5, 7.5, 10].map(score => (
+                  <div key={score} className="label-input">
+                    <label>{score}:</label>
+                    <input
+                      type="text"
+                      value={editFields.labels[score] || ""}
+                      onChange={(e) => handleLabelChange(score, e.target.value)}
+                      placeholder={`Label for ${score}`}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Preview Section */}
+              <div className="preview-container">
+                <h3>Preview:</h3>
+                <div className="slider-box blue-theme">
+                  <p>{editFields.question}</p>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="0.5"
+                    value={previewScore}
+                    onChange={(e) => setPreviewScore(parseFloat(e.target.value))}
+                  />
+                  <div className="slider-numbers">
+                    {[0, 2.5, 5, 7.5, 10].map((score) => (
+                      <span key={score}>{score}</span>
+                    ))}
+                  </div>
+                  <div className="slider-text-labels">
+                    {[0, 2.5, 5, 7.5, 10].map((score) => (
+                      <span key={score}>{editFields.labels[score] || ""}</span>
+                    ))}
+                  </div>
+                  <p className="selected-score">Selected Score: {previewScore}</p>
+                </div>
               </div>
 
               <div className="button-group">
