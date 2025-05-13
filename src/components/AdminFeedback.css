@@ -15,6 +15,32 @@
     border-bottom: 1px solid #e0e0e0;
   }
   
+  .admin-feedback-title-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .admin-feedback-sort-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+    width: auto;
+    min-width: 120px;
+    margin-left: 20px;
+    align-self: flex-start;
+  }
+  
+  .admin-feedback-sort-btn:hover {
+    background-color: #0056b3;
+  }
+  
   .admin-feedback-content {
     background: white;
     padding: 25px;

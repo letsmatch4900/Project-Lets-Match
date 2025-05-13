@@ -6,19 +6,33 @@ import "./AdminFeedback.css";
 
 const AdminFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
+  const [sortOrder, setSortOrder] = useState("desc"); // "desc" for newest first, "asc" for oldest first
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFeedback = async () => {
       const snapshot = await getDocs(collection(db, "feedback"));
-      setFeedbackList(snapshot.docs.map(doc => ({ 
+      const feedbackData = snapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data(),
         date: doc.data().date?.toDate() 
-      })));
+      }));
+      
+      // Sort feedback based on current sort order
+      const sortedFeedback = feedbackData.sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return sortOrder === "desc" ? b.date - a.date : a.date - b.date;
+      });
+      
+      setFeedbackList(sortedFeedback);
     };
     fetchFeedback();
-  }, []);
+  }, [sortOrder]); // Re-fetch when sort order changes
+
+  const toggleSortOrder = () => {
+    setSortOrder(prevOrder => prevOrder === "desc" ? "asc" : "desc");
+  };
 
   return (
     <div className="admin-feedback-container">
@@ -30,7 +44,15 @@ const AdminFeedback = () => {
       </div>
 
       <div className="admin-feedback-content">
-        <h2>User Feedback</h2>
+        <div className="admin-feedback-title-section">
+          <h2>User Feedback</h2>
+          <button 
+            onClick={toggleSortOrder} 
+            className="admin-feedback-sort-btn"
+          >
+            Sort by: {sortOrder === "desc" ? "Newest First" : "Oldest First"}
+          </button>
+        </div>
         
         {feedbackList.length === 0 ? (
           <p className="admin-feedback-empty">No feedback submitted yet.</p>
