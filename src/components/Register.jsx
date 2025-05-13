@@ -49,7 +49,7 @@ const Register = () => {
           await sendEmailVerification(user);
           alert("Verification email sent. You have 5 minutes to verify.");
   
-          // Start 10-minute timer
+          // Start 5-minute timer
           const timer = setTimeout(async () => {
             try {
               const refreshedUser = auth.currentUser;
@@ -74,7 +74,7 @@ const Register = () => {
                 clearTimeout(timer); // Stop the deletion timer
                 clearInterval(checkVerification); // Stop checking
                 setShowProfileForm(true);
-                alert("Email verified! Please enter your information to create your account!");
+                alert("Email verified! You can complete your profile now or skip it for later.");
               }
             } catch (err) {
               console.error("Error checking verification:", err);
@@ -237,7 +237,6 @@ const Register = () => {
                 value={profile.fullName}
                 onChange={handleProfileChange}
                 placeholder="Your Full Name"
-                required
               />
             </div>
             <div className="form-group">
@@ -271,7 +270,6 @@ const Register = () => {
                 value={profile.location}
                 onChange={handleProfileChange}
                 placeholder="Your Location"
-                required
               />
             </div>
           </div>
@@ -323,13 +321,17 @@ const Register = () => {
               onChange={handleProfileChange}
               placeholder="Tell us a bit about yourself..."
               rows="4"
-              required
             ></textarea>
           </div>
 
-          <button type="submit" disabled={uploading}>
-            Complete Registration
-          </button>
+          <div className="button-group">
+            <button type="submit" disabled={uploading}>
+              Complete Registration
+            </button>
+            <button type="button" onClick={() => navigate("/")} className="skip-button">
+              Skip for Now
+            </button>
+          </div>
         </form>
       </div>
     );

@@ -30,25 +30,22 @@ const Login = () => {
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
+        let role = "user"; // Default role
         if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          const role = userData.role || "user"; // Default to user if role not specified
-          
-          alert("Login successful!");
+          role = userDocSnap.data().role || "user";
+        }
 
-          // Navigate based on role
-          if (role === "admin") {
-            navigate("/admin-dashboard"); 
-          } else {
-            navigate("/user-dashboard"); 
-          }
+        alert("Login successful!");
+
+        // Navigate based on role
+        if (role === "admin") {
+          navigate("/admin-dashboard"); 
         } else {
-          setError("No user profile found. Please contact support.");
-          await auth.signOut();
+          navigate("/user-dashboard"); 
         }
       } else {
         await auth.signOut();
-        setError("This email isn't associated with any account.");
+        setError("Please verify your email before logging in.");
       }
     } catch (err) {
       setError(err.message);
