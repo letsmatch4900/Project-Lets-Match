@@ -13,8 +13,8 @@ module.exports = {
   rules: {
     "no-restricted-globals": ["error", "name", "length"],
     "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
-    "comma-dangle": ["error", "always-multiline"],  // 🔥 ADD THIS LINE
+    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+    "comma-dangle": ["error", "always-multiline"], // 🔥 ADD THIS LINE
     "linebreak-style": "off",
     "indent": "off",
     "max-len": "off",

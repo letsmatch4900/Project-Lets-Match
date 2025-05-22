@@ -15,17 +15,22 @@ export default function MatchesPage() {
   const auth = getAuth();
   const user = auth.currentUser;
   const navigate = useNavigate();
-  const [matchDataByQuestion, setMatchDataByQuestion] = useState({});
-  const [expandedQuestionId, setExpandedQuestionId] = useState(null);
+  const [matchedUsers, setMatchedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const handleSelect = (questionId) => {
-    setExpandedQuestionId(prev => (prev === questionId ? null : questionId));
-  };
+  const [sortBy, setSortBy] = useState("percentage");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [currentUserLocation, setCurrentUserLocation] = useState("");
 
   useEffect(() => {
     const fetchMatches = async () => {
       if (!user) return;
+
+      // Get current user's data
+      const currentUserDoc = await getDoc(doc(db, "users", user.uid));
+      if (currentUserDoc.exists()) {
+        const userData = currentUserDoc.data();
+        setCurrentUserLocation(userData.location || "");
+      }
 
       const answersSnap = await getDocs(collection(db, "answers"));
       const usersAnswers = {};
@@ -51,23 +56,37 @@ export default function MatchesPage() {
 
       const currentUserAnswers = usersAnswers[user.uid];
       if (!currentUserAnswers) {
-        setMatchDataByQuestion({});
+        setMatchedUsers([]);
         setLoading(false);
         return;
       }
 
       const usersSnap = await getDocs(collection(db, "users"));
-      const matchGroups = {};
+      const users = {};
+      const matches = [];
 
+      // Create a map of all users with their data
+      usersSnap.docs.forEach(userDoc => {
+        users[userDoc.id] = userDoc.data();
+      });
+
+      // Process each potential match
       for (const userDoc of usersSnap.docs) {
         const matchedUserId = userDoc.id;
-        const userInfo = userDoc.data();
+        const userInfo = users[matchedUserId];
 
+        // Skip self or users without answers
         if (
           matchedUserId === user.uid ||
           !usersAnswers[matchedUserId]
         ) continue;
 
+        // Calculate overall match score
+        let totalAToBScore = 0;
+        let totalBToAScore = 0;
+        let questionCount = 0;
+
+        // Calculate match scores for each common question
         for (const questionId of Object.keys(currentUserAnswers)) {
           if (!usersAnswers[matchedUserId][questionId]) continue;
 
@@ -83,97 +102,144 @@ export default function MatchesPage() {
             { [questionId]: userBAnswer }, // matched user
             { [questionId]: userAAnswer }  // current user
           );
+
+          totalAToBScore += aToB;
+          totalBToAScore += bToA;
+          questionCount++;
+        }
+
+        // Only consider users with at least one common answered question
+        if (questionCount > 0) {
+          const averageAToB = totalAToBScore / questionCount;
+          const averageBToA = totalBToAScore / questionCount;
+          const overallMatchScore = userMatchingCore.geometricMean([averageAToB, averageBToA]);
           
-          const twoWay = userMatchingCore.geometricMean([aToB, bToA]);
-          
-          if (twoWay > 0.5) {
-            const questionSnap = await getDoc(doc(db, "questions", questionId));
-
-            if (!matchGroups[questionId]) {
-              const questionText = questionSnap.exists()
-                ? questionSnap.data().question
-                : "Unknown Question";
-
-              matchGroups[questionId] = {
-                questionText,
-                matches: []
-              };
-            }
-
-          
-            const matchedAnswer = usersAnswers[matchedUserId][questionId];
-            const scoreValue = matchedAnswer?.self ?? null;
-
-            const questionData = questionSnap.exists() ? questionSnap.data() : {};
-            const labelText = questionData.labels && scoreValue in questionData.labels
-              ? questionData.labels[scoreValue]
-              : "";
-
-            matchGroups[questionId].matches.push({
+          // Only add users with a match score above 0.5 (50%)
+          if (overallMatchScore > 0.5) {
+            matches.push({
               userId: matchedUserId,
               displayName: userInfo.nickName || userInfo.fullName || "Unknown User",
-              score: aToB,
-              selfScore: scoreValue,
-              label: labelText
+              matchScore: overallMatchScore,
+              photoURL: userInfo.photoURL || null,
+              gender: userInfo.gender || "Not specified",
+              location: userInfo.location || "Not specified",
+              bio: userInfo.bio || "No bio available"
             });
-
           }
-                   
         }
       }
 
-      setMatchDataByQuestion(matchGroups);
+      setMatchedUsers(matches);
       setLoading(false);
     };
 
     fetchMatches();
   }, [user]);
 
+  const handleSortChange = (criteria) => {
+    if (sortBy === criteria) {
+      // Toggle sort order if clicking the same criteria
+      setSortOrder(prevOrder => prevOrder === "asc" ? "desc" : "asc");
+    } else {
+      // Set new criteria and default to descending for percentage, ascending for distance
+      setSortBy(criteria);
+      setSortOrder(criteria === "percentage" ? "desc" : "asc");
+    }
+  };
+
+  // Calculate a simple "distance" score based on location strings
+  // This is a placeholder - in a real app, you would use geocoding
+  const calculateSimpleDistance = (locationA, locationB) => {
+    if (!locationA || !locationB) return Infinity;
+    
+    // Simple string comparison - closer if they start with the same characters
+    // Return a value between 0 and 1 where 0 is identical and 1 is completely different
+    const maxLength = Math.max(locationA.length, locationB.length);
+    let sameChars = 0;
+    
+    for (let i = 0; i < Math.min(locationA.length, locationB.length); i++) {
+      if (locationA.charAt(i).toLowerCase() === locationB.charAt(i).toLowerCase()) {
+        sameChars++;
+      } else {
+        break;
+      }
+    }
+    
+    return 1 - (sameChars / maxLength);
+  };
+
+  // Sort the matched users based on current criteria
+  const sortedUsers = [...matchedUsers].sort((a, b) => {
+    if (sortBy === "percentage") {
+      return sortOrder === "desc" 
+        ? b.matchScore - a.matchScore 
+        : a.matchScore - b.matchScore;
+    } else if (sortBy === "distance") {
+      const distanceA = calculateSimpleDistance(currentUserLocation, a.location);
+      const distanceB = calculateSimpleDistance(currentUserLocation, b.location);
+      return sortOrder === "asc" 
+        ? distanceA - distanceB 
+        : distanceB - distanceA;
+    }
+    return 0;
+  });
+
   if (loading) return <p>Loading matches...</p>;
 
-
-  if (Object.keys(matchDataByQuestion).length === 0) {
+  if (matchedUsers.length === 0) {
     return <p className="no-matches-message">No current matches</p>;
   }
 
   return (
-    <div className="matches-layout">
-      <div className="questions-sidebar">
-      <h2 className="sidebar-title">Match Questions</h2>
-
-        {Object.entries(matchDataByQuestion).map(([questionId, data]) => (
-          <div
-            key={questionId}
-            className={`question-card ${expandedQuestionId === questionId ? 'active' : ''}`}
-            onClick={() => handleSelect(questionId)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") handleSelect(questionId);
-            }}
+    <div className="matches-container">
+      <div className="matches-header">
+        <h2>Your Matches</h2>
+        <div className="sort-controls">
+          <span>Sort by:</span>
+          <button 
+            className={`sort-button ${sortBy === "percentage" ? "active" : ""}`} 
+            onClick={() => handleSortChange("percentage")}
           >
-            <h4>{data.questionText}</h4>
-          </div>
-        ))}
+            Match % {sortBy === "percentage" && (sortOrder === "desc" ? "↓" : "↑")}
+          </button>
+          <button 
+            className={`sort-button ${sortBy === "distance" ? "active" : ""}`} 
+            onClick={() => handleSortChange("distance")}
+          >
+            Distance {sortBy === "distance" && (sortOrder === "asc" ? "↑" : "↓")}
+          </button>
+        </div>
       </div>
 
-      <div className="matches-panel">
-        {expandedQuestionId && matchDataByQuestion[expandedQuestionId] && (
-          <div className="user-match-list">
-            <h3>{matchDataByQuestion[expandedQuestionId].questionText}</h3>
-            {matchDataByQuestion[expandedQuestionId].matches.map(match => (
-              <div key={match.userId} className="user-match-card">
-                <p>{match.displayName}</p>
-                <p>Match Score: {(match.score * 100).toFixed(2)}%</p>
-                <p>Self Score: <strong>{match.selfScore ?? "N/A"}</strong></p>
-                {match.label && <p><em>"{match.label}"</em></p>}
-                <button onClick={() => navigate(`/profile/${match.userId}`)}>
-                  View Profile
-                </button>
+      <div className="user-matches-grid">
+        {sortedUsers.map(match => (
+          <div key={match.userId} className="user-match-card">
+            <div className="user-match-header">
+              <div className="user-photo">
+                {match.photoURL ? 
+                  <img src={match.photoURL} alt={match.displayName} /> : 
+                  <div className="user-photo-placeholder">
+                    {match.displayName.charAt(0).toUpperCase()}
+                  </div>
+                }
               </div>
-            ))}
+              <div className="user-info">
+                <h3>{match.displayName}</h3>
+                <div className="match-score">
+                  {(match.matchScore * 100).toFixed(0)}% Match
+                </div>
+              </div>
+            </div>
+            <div className="user-details">
+              <p><strong>Gender:</strong> {match.gender}</p>
+              <p><strong>Location:</strong> {match.location}</p>
+              <p className="user-bio">{match.bio}</p>
+            </div>
+            <button className="view-profile-button" onClick={() => navigate(`/profile/${match.userId}`)}>
+              View Profile
+            </button>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
