@@ -28,39 +28,40 @@ const ProfileQuestions = ({ userId }) => {
     
     // Initialize slider values when questions load or change
     useEffect(() => {
-        const initialSliderValues = {};
-        
-        // Initialize values for answered questions
-        answeredQuestions.forEach(question => {
-            if (!sliderValues[question.id]) {
-                initialSliderValues[question.id] = {
-                    selfScore: question.userScore !== undefined ? parseFloat(question.userScore) : 5,
-                    prefMin: question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
-                    prefMax: question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
-                    strictness: question.strictness !== undefined ? parseFloat(question.strictness) : 5
-                };
-            }
+        // Use functional update to avoid dependency on sliderValues
+        setSliderValues(prev => {
+            const newSliderValues = { ...prev };
+            let hasChanges = false;
+            
+            // Initialize values for answered questions
+            answeredQuestions.forEach(question => {
+                if (!newSliderValues[question.id]) {
+                    newSliderValues[question.id] = {
+                        selfScore: question.userScore !== undefined ? parseFloat(question.userScore) : 5,
+                        prefMin: question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
+                        prefMax: question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
+                        strictness: question.strictness !== undefined ? parseFloat(question.strictness) : 5
+                    };
+                    hasChanges = true;
+                }
+            });
+            
+            // Initialize values for unanswered questions
+            unansweredQuestions.forEach(question => {
+                if (!newSliderValues[question.id]) {
+                    newSliderValues[question.id] = {
+                        selfScore: 5,
+                        prefMin: 0,
+                        prefMax: 10,
+                        strictness: 5
+                    };
+                    hasChanges = true;
+                }
+            });
+            
+            // Only return new object if there are changes
+            return hasChanges ? newSliderValues : prev;
         });
-        
-        // Initialize values for unanswered questions
-        unansweredQuestions.forEach(question => {
-            if (!sliderValues[question.id]) {
-                initialSliderValues[question.id] = {
-                    selfScore: 5,
-                    prefMin: 0,
-                    prefMax: 10,
-                    strictness: 5
-                };
-            }
-        });
-        
-        // Only update if we have new initial values
-        if (Object.keys(initialSliderValues).length > 0) {
-            setSliderValues(prev => ({
-                ...prev,
-                ...initialSliderValues
-            }));
-        }
     }, [answeredQuestions, unansweredQuestions]);
 
     useEffect(() => {
