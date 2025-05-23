@@ -23,7 +23,7 @@ if (!admin.apps.length) {
 const dailyQuestionCount = require("./dailyQuestionCount");
 const userMatching = require("./userMatching");
 
-// User stats update function
+// User stats update function - improved for better accuracy
 const updateUserStats = functions.firestore
   .document('users/{userId}')
   .onWrite(async (change, context) => {
@@ -35,32 +35,78 @@ const updateUserStats = functions.firestore
       const after = change.after.exists;
       
       if (!before && after) {
-        // User created
+        // User created - also verify total count for accuracy
         await admin.firestore().runTransaction(async (transaction) => {
-          const statsDoc = await transaction.get(statsRef);
-          const currentCount = statsDoc.exists ? (statsDoc.data().userCount || 0) : 0;
+          // Get actual user count for verification
+          const usersSnapshot = await admin.firestore().collection('users').get();
+          const actualCount = usersSnapshot.size;
+          
           transaction.set(statsRef, { 
-            userCount: currentCount + 1,
+            userCount: actualCount,
             lastUpdated: admin.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
         });
-        console.log('User count incremented');
+        console.log('User count updated after user creation - verified count');
       } else if (before && !after) {
-        // User deleted
+        // User deleted - also verify total count for accuracy
         await admin.firestore().runTransaction(async (transaction) => {
-          const statsDoc = await transaction.get(statsRef);
-          const currentCount = statsDoc.exists ? (statsDoc.data().userCount || 0) : 0;
+          // Get actual user count for verification
+          const usersSnapshot = await admin.firestore().collection('users').get();
+          const actualCount = usersSnapshot.size;
+          
           transaction.set(statsRef, { 
-            userCount: Math.max(0, currentCount - 1),
+            userCount: actualCount,
             lastUpdated: admin.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
         });
-        console.log('User count decremented');
+        console.log('User count updated after user deletion - verified count');
       }
       
       return null;
     } catch (error) {
       console.error('Error updating user stats:', error);
+      return null;
+    }
+  });
+
+// Scheduled function to verify and correct user count every hour
+const verifyUserCount = functions.pubsub
+  .schedule('every 1 hours')
+  .onRun(async (context) => {
+    try {
+      console.log('Starting scheduled user count verification...');
+      
+      const statsRef = admin.firestore().doc('stats/public');
+      const usersSnapshot = await admin.firestore().collection('users').get();
+      const actualCount = usersSnapshot.size;
+      
+      // Get current stored count
+      const statsDoc = await statsRef.get();
+      const storedCount = statsDoc.exists ? (statsDoc.data().userCount || 0) : 0;
+      
+      if (actualCount !== storedCount) {
+        console.log(`Count mismatch detected: stored ${storedCount}, actual ${actualCount}. Correcting...`);
+        
+        await statsRef.set({
+          userCount: actualCount,
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+          lastVerified: admin.firestore.FieldValue.serverTimestamp(),
+          correctedFromCount: storedCount
+        }, { merge: true });
+        
+        console.log(`User count corrected from ${storedCount} to ${actualCount}`);
+      } else {
+        // Update last verified timestamp
+        await statsRef.set({
+          lastVerified: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        console.log(`User count verification passed: ${actualCount} users`);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error in scheduled user count verification:', error);
       return null;
     }
   });
@@ -105,6 +151,7 @@ exports.userMatchingOnUserUpdate = userMatching.onUserUpdate;
 exports.userMatchingScheduled = userMatching.scheduledMatching;
 exports.updateUserStats = updateUserStats;
 exports.initializeUserStats = initializeUserStats;
+exports.verifyUserCount = verifyUserCount;
 
 // Export the v2 functions (new name)
 exports.dailyQuestionCountV2 = require("./v2/dailyQuestionCount").dailyQuestionReport;

@@ -400,16 +400,55 @@
 .error-message {
     color: #ef4444;
     font-size: 0.9rem;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: rgba(239, 68, 68, 0.1);
-    border-radius: 8px;
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    margin: 1rem 0;
+    font-weight: 500;
 }
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+}
+
+/* Refresh Button */
+.refresh-button {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.refresh-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.refresh-button:active {
+    transform: translateY(0);
+}
+
+/* Count Timestamp */
+.count-timestamp {
+    font-size: 0.85rem;
+    color: #10b981;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.count-timestamp::before {
+    content: '●';
+    color: #10b981;
+    animation: pulse 2s infinite;
 }
 
 /* Final CTA Section */

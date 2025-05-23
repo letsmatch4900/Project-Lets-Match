@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaHeart, FaUsers, FaShieldAlt, FaRocket, FaStar, FaComments, FaHome, FaShareAlt, FaCommentDots } from "react-icons/fa";
-import { doc, onSnapshot, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import "./GuestLanding.css";
 
@@ -10,65 +10,117 @@ const GuestLanding = () => {
     const [userCount, setUserCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(null);
     
     useEffect(() => {
-        let unsubscribeStats = null;
+        let unsubscribeUsers = null;
+        let verificationInterval = null;
         
         const fetchUserCount = async () => {
             try {
                 setLoading(true);
                 setError(null);
                 
-                // Get initial count from secure stats collection
-                const statsDocRef = doc(db, "stats", "public");
-                const statsSnap = await getDoc(statsDocRef);
-                
-                if (statsSnap.exists()) {
-                    const statsData = statsSnap.data();
-                    const count = statsData.userCount || 0;
-                    setUserCount(count);
-                } else {
-                    // Fallback count if stats document doesn't exist yet
-                    setUserCount(100); // Default display value
+                // First, try to get the cached count from stats collection for faster initial load
+                try {
+                    const statsDocRef = doc(db, "stats", "public");
+                    const statsSnap = await getDoc(statsDocRef);
+                    
+                    if (statsSnap.exists()) {
+                        const statsData = statsSnap.data();
+                        const cachedCount = statsData.userCount || 0;
+                        setUserCount(cachedCount);
+                    }
+                } catch (statsError) {
+                    console.warn("Could not fetch cached count, will count directly:", statsError);
                 }
                 
+                // Then get the accurate count directly from users collection
+                const usersSnapshot = await getDocs(collection(db, "users"));
+                const actualCount = usersSnapshot.size;
+                setUserCount(actualCount);
+                setLastUpdated(new Date());
                 setLoading(false);
                 
-                // Set up real-time listener for live updates
-                unsubscribeStats = onSnapshot(
-                    statsDocRef,
-                    (doc) => {
-                        if (doc.exists()) {
-                            const statsData = doc.data();
-                            const count = statsData.userCount || 0;
-                            setUserCount(count);
-                            setError(null);
-                        }
+                // Set up real-time listener on the users collection for 100% accuracy
+                unsubscribeUsers = onSnapshot(
+                    collection(db, "users"),
+                    (snapshot) => {
+                        const liveCount = snapshot.size;
+                        setUserCount(liveCount);
+                        setError(null);
                         setLoading(false);
+                        console.log(`Live user count updated: ${liveCount}`);
                     },
                     (error) => {
-                        console.error("Error in stats listener:", error);
-                        setError("Unable to get live updates. Please refresh the page.");
-                        // Don't change the count if we already have it
+                        console.error("Error in users collection listener:", error);
+                        // Don't show error to user if we already have a count
+                        if (userCount === 0) {
+                            setError("Unable to get live updates. Please refresh the page.");
+                        }
                         setLoading(false);
                     }
                 );
+                
+                // Set up periodic verification to ensure accuracy (every 30 seconds)
+                verificationInterval = setInterval(async () => {
+                    try {
+                        const verificationSnapshot = await getDocs(collection(db, "users"));
+                        const verifiedCount = verificationSnapshot.size;
+                        
+                        // Update count if it differs (this handles edge cases where real-time listener might miss updates)
+                        setUserCount(prevCount => {
+                            if (prevCount !== verifiedCount) {
+                                console.log(`Count verification: corrected from ${prevCount} to ${verifiedCount}`);
+                                return verifiedCount;
+                            }
+                            return prevCount;
+                        });
+                    } catch (verificationError) {
+                        console.warn("Periodic verification failed:", verificationError);
+                        // Don't update the UI for verification errors
+                    }
+                }, 30000); // Verify every 30 seconds
+                
             } catch (err) {
                 console.error("Error fetching user count:", err);
                 setError("Unable to load user count. Please check your connection and try again.");
+                // Set a reasonable fallback count
+                setUserCount(100);
                 setLoading(false);
             }
         };
 
         fetchUserCount();
         
-        // Cleanup function to unsubscribe from listener
+        // Cleanup function to unsubscribe from listener and clear interval
         return () => {
-            if (unsubscribeStats) {
-                unsubscribeStats();
+            if (unsubscribeUsers) {
+                unsubscribeUsers();
+            }
+            if (verificationInterval) {
+                clearInterval(verificationInterval);
             }
         };
     }, []);
+    
+    // Manual refresh function for troubleshooting
+    const refreshUserCount = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const usersSnapshot = await getDocs(collection(db, "users"));
+            const actualCount = usersSnapshot.size;
+            setUserCount(actualCount);
+            setLastUpdated(new Date());
+            setLoading(false);
+            console.log(`Manual refresh: ${actualCount} users`);
+        } catch (err) {
+            console.error("Error during manual refresh:", err);
+            setError("Refresh failed. Please try again.");
+            setLoading(false);
+        }
+    };
     
     return (
         <div className="guest-landing">
@@ -187,11 +239,25 @@ const GuestLanding = () => {
                                 <p className="error-message" role="alert">
                                     {error}
                                 </p>
+                                <button 
+                                    className="refresh-button" 
+                                    onClick={refreshUserCount}
+                                    aria-label="Refresh user count"
+                                >
+                                    Try Again
+                                </button>
                             </div>
                         ) : (
-                            <h3 className="count-title">
-                                Join our <span className="dynamic-count">{userCount.toLocaleString()}</span> users today!
-                            </h3>
+                            <div>
+                                <h3 className="count-title">
+                                    Join our <span className="dynamic-count">{userCount.toLocaleString()}</span> users today!
+                                </h3>
+                                {lastUpdated && (
+                                    <p className="count-timestamp">
+                                        Live count • Last updated: {lastUpdated.toLocaleTimeString()}
+                                    </p>
+                                )}
+                            </div>
                         )}
                         
                         <p className="count-subtitle">
