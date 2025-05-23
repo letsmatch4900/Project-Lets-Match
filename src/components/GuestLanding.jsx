@@ -15,6 +15,7 @@ const GuestLanding = () => {
     useEffect(() => {
         let unsubscribeUsers = null;
         let verificationInterval = null;
+        let hasLoadedCount = false;
         
         const fetchUserCount = async () => {
             try {
@@ -30,6 +31,7 @@ const GuestLanding = () => {
                         const statsData = statsSnap.data();
                         const cachedCount = statsData.userCount || 0;
                         setUserCount(cachedCount);
+                        hasLoadedCount = true;
                     }
                 } catch (statsError) {
                     console.warn("Could not fetch cached count, will count directly:", statsError);
@@ -40,6 +42,7 @@ const GuestLanding = () => {
                 const actualCount = usersSnapshot.size;
                 setUserCount(actualCount);
                 setLastUpdated(new Date());
+                hasLoadedCount = true;
                 setLoading(false);
                 
                 // Set up real-time listener on the users collection for 100% accuracy
@@ -50,12 +53,13 @@ const GuestLanding = () => {
                         setUserCount(liveCount);
                         setError(null);
                         setLoading(false);
+                        hasLoadedCount = true;
                         console.log(`Live user count updated: ${liveCount}`);
                     },
                     (error) => {
                         console.error("Error in users collection listener:", error);
-                        // Don't show error to user if we already have a count
-                        if (userCount === 0) {
+                        // Only show error to user if we haven't loaded any count yet
+                        if (!hasLoadedCount) {
                             setError("Unable to get live updates. Please refresh the page.");
                         }
                         setLoading(false);
