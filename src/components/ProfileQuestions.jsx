@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
+import { auth } from "../firebase";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, orderBy } from "firebase/firestore";
 import "./ProfileQuestions.css";
 
@@ -31,19 +32,35 @@ const ProfileQuestions = ({ userId }) => {
         
         // Initialize values for answered questions
         answeredQuestions.forEach(question => {
-            initialSliderValues[question.id] = {
-                selfScore: question.userScore !== undefined ? parseFloat(question.userScore) : 5,
-                prefMin: question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
-                prefMax: question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
-                strictness: question.strictness !== undefined ? parseFloat(question.strictness) : 5
-            };
+            if (!sliderValues[question.id]) {
+                initialSliderValues[question.id] = {
+                    selfScore: question.userScore !== undefined ? parseFloat(question.userScore) : 5,
+                    prefMin: question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
+                    prefMax: question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
+                    strictness: question.strictness !== undefined ? parseFloat(question.strictness) : 5
+                };
+            }
         });
         
-        // Keep existing slider values for questions that are currently being interacted with
-        setSliderValues(prev => ({
-            ...initialSliderValues,
-            ...prev // Preserve any current user edits
-        }));
+        // Initialize values for unanswered questions
+        unansweredQuestions.forEach(question => {
+            if (!sliderValues[question.id]) {
+                initialSliderValues[question.id] = {
+                    selfScore: 5,
+                    prefMin: 0,
+                    prefMax: 10,
+                    strictness: 5
+                };
+            }
+        });
+        
+        // Only update if we have new initial values
+        if (Object.keys(initialSliderValues).length > 0) {
+            setSliderValues(prev => ({
+                ...prev,
+                ...initialSliderValues
+            }));
+        }
     }, [answeredQuestions, unansweredQuestions]);
 
     useEffect(() => {
@@ -222,9 +239,42 @@ const ProfileQuestions = ({ userId }) => {
             setUpdatingQuestionId(questionId);
             setError("");
             const now = new Date();
+            
+            // Verify user authentication
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                throw new Error('User not authenticated. Please log in again.');
+            }
+            
+            console.log('Starting answer submission for question:', questionId);
+            console.log('Answer data:', { score, prefMin, prefMax, strictness, userId });
+            console.log('Current user:', currentUser.uid);
+            
+            // Validate input data
+            if (!questionId) {
+                throw new Error('Question ID is missing');
+            }
+            if (!userId) {
+                throw new Error('User ID is missing');
+            }
+            if (currentUser.uid !== userId) {
+                throw new Error('User ID mismatch. Please refresh and try again.');
+            }
+            if (typeof score !== 'number' || isNaN(score)) {
+                throw new Error('Score must be a valid number');
+            }
+            if (typeof prefMin !== 'number' || isNaN(prefMin)) {
+                throw new Error('Preference minimum must be a valid number');
+            }
+            if (typeof prefMax !== 'number' || isNaN(prefMax)) {
+                throw new Error('Preference maximum must be a valid number');
+            }
+            if (typeof strictness !== 'number' || isNaN(strictness)) {
+                throw new Error('Strictness must be a valid number');
+            }
     
             const answerData = {
-                userId,
+                userId: currentUser.uid, // Use current user's UID directly
                 questionId,
                 selfScore: score,
                 prefMin,
@@ -232,42 +282,85 @@ const ProfileQuestions = ({ userId }) => {
                 strictness,
                 answeredAt: now
             };
-    
-            const answerRef = await addDoc(collection(db, "answers"), answerData);
-    
-            const userDocRef = doc(db, "users", userId);
-            await updateDoc(userDocRef, {
-                [`questionAnswers.${questionId}`]: answerData,
-                updatedAt: now
-            });
-    
-            // Update state
-            const answeredQuestion = unansweredQuestions.find(q => q.id === questionId);
-            if (answeredQuestion) {
-                setUnansweredQuestions(prev => prev.filter(q => q.id !== questionId));
-                setAnsweredQuestions(prev => [...prev, {
-                    ...answeredQuestion,
-                    userScore: score,
-                    prefMin,
-                    prefMax,
-                    strictness,
-                    answeredAt: now,
-                    answerId: answerRef.id
-                }]);
+            
+            console.log('Creating answer document with data:', answerData);
+            
+            // Step 1: Create the answer document
+            let answerRef;
+            try {
+                answerRef = await addDoc(collection(db, "answers"), answerData);
+                console.log('Successfully created answer document:', answerRef.id);
+            } catch (answerError) {
+                console.error('Error creating answer document:', answerError);
+                console.error('Answer error details:', answerError.code, answerError.message);
+                throw new Error(`Failed to create answer document: ${answerError.message}`);
+            }
+            
+            // Step 2: Update the user document
+            try {
+                console.log('Updating user document:', currentUser.uid);
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userUpdateData = {
+                    [`questionAnswers.${questionId}`]: {
+                        userId: currentUser.uid,
+                        questionId,
+                        selfScore: score,
+                        prefMin,
+                        prefMax,
+                        strictness,
+                        answeredAt: now,
+                        updatedAt: now
+                    },
+                    updatedAt: now
+                };
+                console.log('User update data:', userUpdateData);
+                await updateDoc(userDocRef, userUpdateData);
+                console.log('Successfully updated user document');
+            } catch (userError) {
+                console.error('Error updating user document:', userError);
+                console.error('User error details:', userError.code, userError.message);
+                throw new Error(`Failed to update user document: ${userError.message}`);
             }
     
-            // Clear this question's slider values
-            setSliderValues(prev => {
-                const newValues = {...prev};
-                delete newValues[questionId];
-                return newValues;
-            });
+            // Step 3: Update local state
+            try {
+                // Update state
+                const answeredQuestion = unansweredQuestions.find(q => q.id === questionId);
+                if (answeredQuestion) {
+                    setUnansweredQuestions(prev => prev.filter(q => q.id !== questionId));
+                    setAnsweredQuestions(prev => [...prev, {
+                        ...answeredQuestion,
+                        userScore: score,
+                        prefMin,
+                        prefMax,
+                        strictness,
+                        answeredAt: now,
+                        answerId: answerRef.id
+                    }]);
+                }
+        
+                // Clear this question's slider values
+                setSliderValues(prev => {
+                    const newValues = {...prev};
+                    delete newValues[questionId];
+                    return newValues;
+                });
+                
+                console.log('Successfully updated local state');
+            } catch (stateError) {
+                console.error('Error updating local state:', stateError);
+                // Don't throw here since the database updates succeeded
+                console.warn('Database updated successfully but local state update failed');
+            }
     
             setFeedback("Answer saved successfully!");
             setTimeout(() => setFeedback(""), 3000);
+            console.log('Answer submission completed successfully');
+            
         } catch (err) {
-            console.error("Error saving answer:", err);
-            setError("Failed to save your answer. Please try again.");
+            console.error("Error in handleAnswerQuestion:", err);
+            console.error("Error stack:", err.stack);
+            setError(`Failed to save your answer: ${err.message}`);
         } finally {
             setUpdatingQuestionId(null);
         }
@@ -279,11 +372,44 @@ const ProfileQuestions = ({ userId }) => {
             setError("");
             const now = new Date();
             
+            // Verify user authentication
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                throw new Error('User not authenticated. Please log in again.');
+            }
+            
+            console.log('Starting update process for question:', questionId);
+            console.log('Update data:', { score, prefMin, prefMax, strictness, userId });
+            console.log('Current user:', currentUser.uid);
+            
+            // Validate input data
+            if (!questionId) {
+                throw new Error('Question ID is missing');
+            }
+            if (!userId) {
+                throw new Error('User ID is missing');
+            }
+            if (currentUser.uid !== userId) {
+                throw new Error('User ID mismatch. Please refresh and try again.');
+            }
+            if (typeof score !== 'number' || isNaN(score)) {
+                throw new Error('Score must be a valid number');
+            }
+            if (typeof prefMin !== 'number' || isNaN(prefMin)) {
+                throw new Error('Preference minimum must be a valid number');
+            }
+            if (typeof prefMax !== 'number' || isNaN(prefMax)) {
+                throw new Error('Preference maximum must be a valid number');
+            }
+            if (typeof strictness !== 'number' || isNaN(strictness)) {
+                throw new Error('Strictness must be a valid number');
+            }
+            
             // Find the question being updated
             const questionToUpdate = answeredQuestions.find(q => q.id === questionId);
             
             if (!questionToUpdate) {
-                throw new Error("Question not found");
+                throw new Error("Question not found in answered questions list");
             }
             
             console.log(`Updating question "${questionToUpdate.question}" with score: ${score}`);
@@ -296,75 +422,102 @@ const ProfileQuestions = ({ userId }) => {
                 updatedAt: now
             };
             
-            // If we have an answerId, update that specific document
-            if (questionToUpdate.answerId) {
-                const answerDocRef = doc(db, "answers", questionToUpdate.answerId);
-                await updateDoc(answerDocRef, answerData);
-                console.log(`Updated existing answer document: ${questionToUpdate.answerId}`);
-            } else {
-                // If no answer document exists, create one
-                const fullAnswerData = {
-                    userId,
-                    questionId,
-                    ...answerData,
-                    answeredAt: now
-                };
-                const newAnswerRef = await addDoc(collection(db, "answers"), fullAnswerData);
-                console.log(`Created new answer document: ${newAnswerRef.id}`);
-                // Update the question with the new answerId
-                questionToUpdate.answerId = newAnswerRef.id;
+            // Step 1: Update or create the answer document
+            try {
+                if (questionToUpdate.answerId) {
+                    console.log('Updating existing answer document:', questionToUpdate.answerId);
+                    const answerDocRef = doc(db, "answers", questionToUpdate.answerId);
+                    await updateDoc(answerDocRef, answerData);
+                    console.log(`Successfully updated existing answer document: ${questionToUpdate.answerId}`);
+                } else {
+                    console.log('Creating new answer document');
+                    // If no answer document exists, create one
+                    const fullAnswerData = {
+                        userId: currentUser.uid,
+                        questionId,
+                        ...answerData,
+                        answeredAt: now
+                    };
+                    const newAnswerRef = await addDoc(collection(db, "answers"), fullAnswerData);
+                    console.log(`Successfully created new answer document: ${newAnswerRef.id}`);
+                    // Update the question with the new answerId
+                    questionToUpdate.answerId = newAnswerRef.id;
+                }
+            } catch (answerError) {
+                console.error('Error updating answer document:', answerError);
+                throw new Error(`Failed to update answer document: ${answerError.message}`);
             }
             
-            // Update the user document with the updated answer
-            const userDocRef = doc(db, "users", userId);
-            await updateDoc(userDocRef, {
-                [`questionAnswers.${questionId}`]: {
-                    userId,
-                    questionId,
-                    selfScore: score,
-                    prefMin,
-                    prefMax,
-                    strictness,
-                    answeredAt: questionToUpdate.answeredAt || now,
+            // Step 2: Update the user document
+            try {
+                console.log('Updating user document:', currentUser.uid);
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userUpdateData = {
+                    [`questionAnswers.${questionId}`]: {
+                        userId: currentUser.uid,
+                        questionId,
+                        selfScore: score,
+                        prefMin,
+                        prefMax,
+                        strictness,
+                        answeredAt: questionToUpdate.answeredAt || now,
+                        updatedAt: now
+                    },
                     updatedAt: now
-                },
-                updatedAt: now
-            });
+                };
+                console.log('User update data:', userUpdateData);
+                await updateDoc(userDocRef, userUpdateData);
+                console.log(`Successfully updated user document with new values`);
+            } catch (userError) {
+                console.error('Error updating user document:', userError);
+                console.error('User error details:', userError.code, userError.message);
+                throw new Error(`Failed to update user document: ${userError.message}`);
+            }
             
-            console.log(`Updated user document with new values`);
-            
-            // Create a new object for each question to ensure React detects the change
-            setAnsweredQuestions(prev => 
-                prev.map(q => {
-                    if (q.id === questionId) {
-                        return {
-                            ...q,
-                            userScore: score,
-                            prefMin,
-                            prefMax,
-                            strictness,
-                            answeredAt: now
-                        };
-                    }
-                    return q;
-                })
-            );
-            
-            // Clear this question's slider values to ensure fresh value next time
-            setSliderValues(prev => {
-                const newValues = {...prev};
-                delete newValues[questionId];
-                return newValues;
-            });
-            
-            // Force a component update
-            setForceUpdate(prev => prev + 1);
+            // Step 3: Update local state
+            try {
+                // Create a new object for each question to ensure React detects the change
+                setAnsweredQuestions(prev => 
+                    prev.map(q => {
+                        if (q.id === questionId) {
+                            return {
+                                ...q,
+                                userScore: score,
+                                prefMin,
+                                prefMax,
+                                strictness,
+                                answeredAt: now
+                            };
+                        }
+                        return q;
+                    })
+                );
+                
+                // Clear this question's slider values to ensure fresh value next time
+                setSliderValues(prev => {
+                    const newValues = {...prev};
+                    delete newValues[questionId];
+                    return newValues;
+                });
+                
+                // Force a component update
+                setForceUpdate(prev => prev + 1);
+                
+                console.log('Successfully updated local state');
+            } catch (stateError) {
+                console.error('Error updating local state:', stateError);
+                // Don't throw here since the database updates succeeded
+                console.warn('Database updated successfully but local state update failed');
+            }
             
             setFeedback("Answer updated successfully!");
             setTimeout(() => setFeedback(""), 3000);
+            console.log('Update process completed successfully');
+            
         } catch (err) {
-            console.error("Error updating answer:", err);
-            setError("Failed to update your answer. Please try again.");
+            console.error("Error in handleUpdateAnswer:", err);
+            console.error("Error stack:", err.stack);
+            setError(`Failed to update your answer: ${err.message}`);
         } finally {
             setUpdatingQuestionId(null);
         }
@@ -503,24 +656,33 @@ const ProfileQuestions = ({ userId }) => {
         const scoreOptions = [0, 2.5, 5, 7.5, 10];
         const isUpdating = updatingQuestionId === question.id;
     
-        // Get current slider values or initialize with defaults
-        const values = sliderValues[question.id] || {
+        // Define default values consistently
+        const defaultValues = {
             selfScore: isAnswered && question.userScore !== undefined ? parseFloat(question.userScore) : 5,
             prefMin: isAnswered && question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
             prefMax: isAnswered && question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
             strictness: isAnswered && question.strictness !== undefined ? parseFloat(question.strictness) : 5
         };
+        
+        // Get current slider values with fallback to defaults
+        const currentValues = sliderValues[question.id] || defaultValues;
+        
+        // Ensure all values are defined
+        const values = {
+            selfScore: currentValues.selfScore !== undefined ? currentValues.selfScore : defaultValues.selfScore,
+            prefMin: currentValues.prefMin !== undefined ? currentValues.prefMin : defaultValues.prefMin,
+            prefMax: currentValues.prefMax !== undefined ? currentValues.prefMax : defaultValues.prefMax,
+            strictness: currentValues.strictness !== undefined ? currentValues.strictness : defaultValues.strictness
+        };
     
         const handleSubmit = () => {
-            // Get values from sliderValues state, or use defaults if not set
-            const currentValues = sliderValues[question.id] || values;
-            
+            // Use the current values from state
             const {
-                selfScore = 5,
-                prefMin = 0,
-                prefMax = 10,
-                strictness = 5
-            } = currentValues;
+                selfScore = defaultValues.selfScore,
+                prefMin = defaultValues.prefMin,
+                prefMax = defaultValues.prefMax,
+                strictness = defaultValues.strictness
+            } = values;
         
             if (isAnswered) {
                 handleUpdateAnswer(question.id, selfScore, prefMin, prefMax, strictness);
@@ -532,13 +694,17 @@ const ProfileQuestions = ({ userId }) => {
         const renderSlider = (label, field) => {
             const isUpdating = updatingQuestionId === question.id;
           
-            // Retrieve current slider values or set defaults
-            const values = sliderValues[question.id] || {
+            // Ensure we always have defined values for sliders
+            const defaultValues = {
               selfScore: isAnswered && question.userScore !== undefined ? parseFloat(question.userScore) : 5,
               prefMin: isAnswered && question.prefMin !== undefined ? parseFloat(question.prefMin) : 0,
               prefMax: isAnswered && question.prefMax !== undefined ? parseFloat(question.prefMax) : 10,
               strictness: isAnswered && question.strictness !== undefined ? parseFloat(question.strictness) : 5
             };
+            
+            // Retrieve current slider values with fallback to defaults
+            const currentValues = sliderValues[question.id] || defaultValues;
+            const currentValue = currentValues[field] !== undefined ? currentValues[field] : defaultValues[field];
           
             // Function to get label text for a specific score
             const getLabelText = (score) => {
@@ -553,7 +719,7 @@ const ProfileQuestions = ({ userId }) => {
                   min="0"
                   max="10"
                   step="2.5"
-                  value={values[field]}
+                  value={currentValue}
                   onChange={(e) => updateSliderValue(question.id, field, parseFloat(e.target.value))}
                   className="slider"
                   disabled={isUpdating}
@@ -561,7 +727,7 @@ const ProfileQuestions = ({ userId }) => {
                 <div className="slider-labels">
                   {scoreOptions.map((score) => (
                     <div key={score} className="label-container">
-                      <span className={`score-value ${values[field] === score ? 'active-score' : ''}`}>
+                      <span className={`score-value ${currentValue === score ? 'active-score' : ''}`}>
                         {score}
                       </span>
                       {field === 'selfScore' && (

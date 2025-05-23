@@ -23,114 +23,140 @@ export default function MatchesPage() {
 
   useEffect(() => {
     const fetchMatches = async () => {
-      if (!user) return;
-
-      // Get current user's data
-      const currentUserDoc = await getDoc(doc(db, "users", user.uid));
-      if (currentUserDoc.exists()) {
-        const userData = currentUserDoc.data();
-        setCurrentUserLocation(userData.location || "");
-      }
-
-      const answersSnap = await getDocs(collection(db, "answers"));
-      const usersAnswers = {};
-
-      answersSnap.forEach(doc => {
-        const data = doc.data();
-        const { userId, questionId, selfScore, prefMin, prefMax, strictness } = data;
-
-        if (
-          typeof selfScore === "number" &&
-          typeof prefMin === "number" &&
-          typeof prefMax === "number" &&
-          typeof strictness === "number"
-        ) {
-          if (!usersAnswers[userId]) usersAnswers[userId] = {};
-          usersAnswers[userId][questionId] = {
-            self: selfScore,
-            prefRange: [prefMin, prefMax],
-            strictness
-          };
-        }
-      });
-
-      const currentUserAnswers = usersAnswers[user.uid];
-      if (!currentUserAnswers) {
-        setMatchedUsers([]);
+      if (!user) {
+        console.log("No authenticated user found");
         setLoading(false);
         return;
       }
 
-      const usersSnap = await getDocs(collection(db, "users"));
-      const users = {};
-      const matches = [];
+      console.log("Starting fetchMatches for user:", user.uid);
+      console.log("User auth token exists:", !!user.accessToken);
 
-      // Create a map of all users with their data
-      usersSnap.docs.forEach(userDoc => {
-        users[userDoc.id] = userDoc.data();
-      });
-
-      // Process each potential match
-      for (const userDoc of usersSnap.docs) {
-        const matchedUserId = userDoc.id;
-        const userInfo = users[matchedUserId];
-
-        // Skip self or users without answers
-        if (
-          matchedUserId === user.uid ||
-          !usersAnswers[matchedUserId]
-        ) continue;
-
-        // Calculate overall match score
-        let totalAToBScore = 0;
-        let totalBToAScore = 0;
-        let questionCount = 0;
-
-        // Calculate match scores for each common question
-        for (const questionId of Object.keys(currentUserAnswers)) {
-          if (!usersAnswers[matchedUserId][questionId]) continue;
-
-          const userAAnswer = currentUserAnswers[questionId];
-          const userBAnswer = usersAnswers[matchedUserId][questionId];
-
-          const aToB = userMatchingCore.calculateOneWayMatchScore(
-            { [questionId]: userAAnswer }, // current user
-            { [questionId]: userBAnswer }  // matched user
-          );
-          
-          const bToA = userMatchingCore.calculateOneWayMatchScore(
-            { [questionId]: userBAnswer }, // matched user
-            { [questionId]: userAAnswer }  // current user
-          );
-
-          totalAToBScore += aToB;
-          totalBToAScore += bToA;
-          questionCount++;
+      try {
+        // Get current user's data
+        console.log("Fetching current user data...");
+        const currentUserDoc = await getDoc(doc(db, "users", user.uid));
+        if (currentUserDoc.exists()) {
+          const userData = currentUserDoc.data();
+          setCurrentUserLocation(userData.location || "");
+          console.log("Current user data fetched successfully");
+        } else {
+          console.log("Current user document does not exist");
         }
 
-        // Only consider users with at least one common answered question
-        if (questionCount > 0) {
-          const averageAToB = totalAToBScore / questionCount;
-          const averageBToA = totalBToAScore / questionCount;
-          const overallMatchScore = userMatchingCore.geometricMean([averageAToB, averageBToA]);
-          
-          // Only add users with a match score above 0.5 (50%)
-          if (overallMatchScore > 0.5) {
-            matches.push({
-              userId: matchedUserId,
-              displayName: userInfo.nickName || userInfo.fullName || "Unknown User",
-              matchScore: overallMatchScore,
-              photoURL: userInfo.photoURL || null,
-              gender: userInfo.gender || "Not specified",
-              location: userInfo.location || "Not specified",
-              bio: userInfo.bio || "No bio available"
-            });
+        console.log("Fetching all answers...");
+        const answersSnap = await getDocs(collection(db, "answers"));
+        console.log("Answers fetched successfully, count:", answersSnap.docs.length);
+        
+        const usersAnswers = {};
+
+        answersSnap.forEach(doc => {
+          const data = doc.data();
+          const { userId, questionId, selfScore, prefMin, prefMax, strictness } = data;
+
+          if (
+            typeof selfScore === "number" &&
+            typeof prefMin === "number" &&
+            typeof prefMax === "number" &&
+            typeof strictness === "number"
+          ) {
+            if (!usersAnswers[userId]) usersAnswers[userId] = {};
+            usersAnswers[userId][questionId] = {
+              self: selfScore,
+              prefRange: [prefMin, prefMax],
+              strictness
+            };
+          }
+        });
+
+        const currentUserAnswers = usersAnswers[user.uid];
+        if (!currentUserAnswers) {
+          console.log("Current user has no answers");
+          setMatchedUsers([]);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Fetching all users...");
+        const usersSnap = await getDocs(collection(db, "users"));
+        console.log("Users fetched successfully, count:", usersSnap.docs.length);
+        
+        const users = {};
+        const matches = [];
+
+        // Create a map of all users with their data
+        usersSnap.docs.forEach(userDoc => {
+          users[userDoc.id] = userDoc.data();
+        });
+
+        // Process each potential match
+        for (const userDoc of usersSnap.docs) {
+          const matchedUserId = userDoc.id;
+          const userInfo = users[matchedUserId];
+
+          // Skip self or users without answers
+          if (
+            matchedUserId === user.uid ||
+            !usersAnswers[matchedUserId]
+          ) continue;
+
+          // Calculate overall match score
+          let totalAToBScore = 0;
+          let totalBToAScore = 0;
+          let questionCount = 0;
+
+          // Calculate match scores for each common question
+          for (const questionId of Object.keys(currentUserAnswers)) {
+            if (!usersAnswers[matchedUserId][questionId]) continue;
+
+            const userAAnswer = currentUserAnswers[questionId];
+            const userBAnswer = usersAnswers[matchedUserId][questionId];
+
+            const aToB = userMatchingCore.calculateOneWayMatchScore(
+              { [questionId]: userAAnswer }, // current user
+              { [questionId]: userBAnswer }  // matched user
+            );
+            
+            const bToA = userMatchingCore.calculateOneWayMatchScore(
+              { [questionId]: userBAnswer }, // matched user
+              { [questionId]: userAAnswer }  // current user
+            );
+
+            totalAToBScore += aToB;
+            totalBToAScore += bToA;
+            questionCount++;
+          }
+
+          // Only consider users with at least one common answered question
+          if (questionCount > 0) {
+            const averageAToB = totalAToBScore / questionCount;
+            const averageBToA = totalBToAScore / questionCount;
+            const overallMatchScore = userMatchingCore.geometricMean([averageAToB, averageBToA]);
+            
+            // Only add users with a match score above 0.5 (50%)
+            if (overallMatchScore > 0.5) {
+              matches.push({
+                userId: matchedUserId,
+                displayName: userInfo.nickName || userInfo.fullName || "Unknown User",
+                matchScore: overallMatchScore,
+                photoURL: userInfo.photoURL || null,
+                gender: userInfo.gender || "Not specified",
+                location: userInfo.location || "Not specified",
+                bio: userInfo.bio || "No bio available"
+              });
+            }
           }
         }
-      }
 
-      setMatchedUsers(matches);
-      setLoading(false);
+        console.log("Matches calculated successfully, count:", matches.length);
+        setMatchedUsers(matches);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error in fetchMatches:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        setLoading(false);
+      }
     };
 
     fetchMatches();

@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow all authenticated users to read any document
+    match /{document=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // Specific rules for users collection
+    match /users/{userId} {
+      // Users can read and write their own profile
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow admin users to read/write any user profile
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      // Rules for subcollections under users (like matches)
+      match /matches/{matchId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Rules for answers collection - users can only manage their own answers
+    match /answers/{answerId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        resource == null || // creation
+        resource.data.userId == request.auth.uid // own answers
+      );
+    }
+    
+    // Rules for questions collection
+    match /questions/{questionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        resource == null || // creation
+        resource.data.submittedBy == request.auth.uid || // own questions
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') // admin
+      );
+    }
+    
+    // Rules for feedback collection
+    match /feedback/{feedbackId} {
+      allow read: if request.auth != null && 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow write: if request.auth != null && (
+        resource == null || // creation
+        resource.data.userId == request.auth.uid // own feedback
+      );
+    }
+    
+    // Rules for stats collection (public read, admin write)
+    match /stats/{document} {
+      allow read: if true; // public read
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+} 
