@@ -47,9 +47,18 @@ const BuildProfile = () => {
 
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
+                    
+                    // Ensure all profile fields have default values
                     setProfile({
-                        ...userData,
-                        email: user.email // Email from auth
+                        email: user.email, // Email from auth
+                        fullName: userData.fullName || "",
+                        nickName: userData.nickName || "",
+                        gender: userData.gender || "",
+                        country: userData.country || "",
+                        language: userData.language || "",
+                        timeZone: userData.timeZone || "",
+                        location: userData.location || "",
+                        bio: userData.bio || ""
                     });
                     
                     // Set profile image if it exists
@@ -57,11 +66,18 @@ const BuildProfile = () => {
                         setImageUrl(userData.photoURL);
                     }
                 } else {
-                    // Initialize with user's email
-                    setProfile(prev => ({
-                        ...prev,
-                        email: user.email
-                    }));
+                    // Initialize with user's email and default values
+                    setProfile({
+                        email: user.email,
+                        fullName: "",
+                        nickName: "",
+                        gender: "",
+                        country: "",
+                        language: "",
+                        timeZone: "",
+                        location: "",
+                        bio: ""
+                    });
                 }
             } catch (err) {
                 setError("Error fetching profile: " + err.message);
@@ -147,6 +163,31 @@ const BuildProfile = () => {
         }
     };
 
+    // Helper function to clean profile data and ensure no undefined values
+    const cleanProfileData = (profileData) => {
+        const cleanedData = {};
+        
+        // Define all expected fields with their default values
+        const defaultValues = {
+            fullName: "",
+            nickName: "",
+            gender: "",
+            country: "",
+            language: "",
+            timeZone: "",
+            location: "",
+            bio: "",
+            photoURL: null
+        };
+
+        // Copy each field, using default value if undefined
+        Object.keys(defaultValues).forEach(key => {
+            cleanedData[key] = profileData[key] !== undefined ? profileData[key] : defaultValues[key];
+        });
+
+        return cleanedData;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
@@ -174,9 +215,8 @@ const BuildProfile = () => {
             const userDoc = await getDoc(userDocRef);
             const existingData = userDoc.exists() ? userDoc.data() : {};
             
-            // Update profile data in Firestore while preserving other fields
-            await setDoc(doc(db, "users", user.uid), {
-                ...existingData,
+            // Prepare profile data and clean it to remove undefined values
+            const profileDataToSave = {
                 fullName: profile.fullName,
                 nickName: profile.nickName,
                 gender: profile.gender,
@@ -185,7 +225,15 @@ const BuildProfile = () => {
                 timeZone: profile.timeZone,
                 location: profile.location,
                 bio: profile.bio,
-                photoURL: photoURL,
+                photoURL: photoURL
+            };
+
+            const cleanedProfileData = cleanProfileData(profileDataToSave);
+            
+            // Update profile data in Firestore while preserving other fields
+            await setDoc(doc(db, "users", user.uid), {
+                ...existingData,
+                ...cleanedProfileData,
                 updatedAt: new Date()
             });
 
