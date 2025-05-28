@@ -142,7 +142,9 @@ export default function MatchesPage() {
                 photoURL: userInfo.photoURL || null,
                 gender: userInfo.gender || "Not specified",
                 location: userInfo.location || "Not specified",
-                bio: userInfo.bio || "No bio available"
+                bio: userInfo.bio || "No bio available",
+                rating: userInfo.rating || null,
+                reviewCount: userInfo.reviewCount || 0
               });
             }
           }
@@ -240,27 +242,36 @@ export default function MatchesPage() {
       <div className="user-matches-grid">
         {sortedUsers.map(match => (
           <div key={match.userId} className="user-match-card">
-            <div className="user-match-header">
-              <div className="user-photo">
+            <div className="user-profile">
+              <div className="user-avatar">
                 {match.photoURL ? 
                   <img src={match.photoURL} alt={match.displayName} /> : 
-                  <div className="user-photo-placeholder">
+                  <div className="user-avatar-placeholder">
                     {match.displayName.charAt(0).toUpperCase()}
                   </div>
                 }
               </div>
               <div className="user-info">
-                <h3>{match.displayName}</h3>
-                <div className="match-score">
-                  {(match.matchScore * 100).toFixed(0)}% Match
-                </div>
+                <h5>{match.displayName}</h5>
+                <p className="user-location">{match.location}</p>
               </div>
             </div>
-            <div className="user-details">
-              <p><strong>Gender:</strong> {match.gender}</p>
-              <p><strong>Location:</strong> {match.location}</p>
-              <p className="user-bio">{match.bio}</p>
+            <div className="user-match-score">
+              {(match.matchScore * 100).toFixed(0)}% Match
             </div>
+            <div className="user-rating">
+              {match.reviewCount > 0 ? (
+                <>
+                  <span className="user-stars">★ {match.rating} rating</span>
+                  <span>• {match.reviewCount} reviews</span>
+                </>
+              ) : (
+                <span className="user-stars">No reviews</span>
+              )}
+            </div>
+            <p className="user-description">
+              {match.bio || "No bio available"}
+            </p>
             <button className="view-profile-button" onClick={() => navigate(`/profile/${match.userId}`)}>
               View Profile
             </button>

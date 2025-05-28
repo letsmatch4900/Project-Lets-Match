@@ -40,11 +40,124 @@
 }
 
 .user-match-card {
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  background: #ffffff;
+  border-radius: 15px;
+  padding: 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-match-card:hover {
+  transform: translateY(-2px);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.user-info {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #e1e1e1;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  background: #2563eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.user-info h5 {
+  margin: 0 0 0.25rem 0;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.user-role {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.user-location {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.user-match-score {
+  background: #dcfce7;
+  color: #166534;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: inline-block;
+  margin-bottom: 1rem;
+  width: fit-content;
+}
+
+.user-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.user-stars {
+  color: #fbbf24;
+  font-size: 0.9rem;
+}
+
+.user-description {
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 1.5rem 0;
+  flex: 1;
+}
+
+.view-profile-button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+  margin-top: auto;
+  font-size: 0.9rem;
+}
+
+.view-profile-button:hover {
+  background-color: #1d4ed8;
 }
 
 .sidebar-title {
@@ -113,108 +226,8 @@
 
 .user-matches-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
-}
-
-.user-match-card {
-  border: 1px solid #eaeaea;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  background-color: #fff;
-  display: flex;
-  flex-direction: column;
-}
-
-.user-match-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.user-match-header {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.user-photo {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-right: 1rem;
-  background-color: #e1e1e1;
-}
-
-.user-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.user-photo-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #3498db;
-  color: white;
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.user-info {
-  flex: 1;
-}
-
-.user-info h3 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.1rem;
-}
-
-.match-score {
-  font-weight: bold;
-  color: #3498db;
-  font-size: 0.9rem;
-}
-
-.user-details {
-  padding: 1rem;
-  flex: 1;
-}
-
-.user-details p {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
-}
-
-.user-bio {
-  margin-top: 0.75rem !important;
-  color: #666;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-style: italic;
-}
-
-.view-profile-button {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  padding: 0.75rem;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
-  margin-top: auto;
-}
-
-.view-profile-button:hover {
-  background-color: #2980b9;
 }
 
 /* Responsive adjustments */
@@ -227,5 +240,28 @@
   
   .user-matches-grid {
     grid-template-columns: 1fr;
+  }
+
+  .user-match-card {
+    padding: 1.5rem;
+  }
+
+  .sort-controls {
+    margin-right: 0;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .user-match-card {
+    padding: 1rem;
+  }
+
+  .user-profile {
+    margin-bottom: 1rem;
+  }
+
+  .view-profile-button {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
   }
 }

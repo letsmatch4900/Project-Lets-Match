@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaHeart, FaUsers, FaShieldAlt, FaRocket, FaStar, FaComments, FaHome, FaShareAlt, FaCommentDots } from "react-icons/fa";
+import { FaHeart, FaHome, FaShareAlt, FaCommentDots, FaGraduationCap, FaTools, FaHandshake } from "react-icons/fa";
 import { collection, onSnapshot, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import "./GuestLanding.css";
@@ -10,7 +10,6 @@ const GuestLanding = () => {
     const [userCount, setUserCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [lastUpdated, setLastUpdated] = useState(null);
     
     useEffect(() => {
         let unsubscribeUsers = null;
@@ -41,7 +40,6 @@ const GuestLanding = () => {
                 const usersSnapshot = await getDocs(collection(db, "users"));
                 const actualCount = usersSnapshot.size;
                 setUserCount(actualCount);
-                setLastUpdated(new Date());
                 hasLoadedCount = true;
                 setLoading(false);
                 
@@ -116,7 +114,6 @@ const GuestLanding = () => {
             const usersSnapshot = await getDocs(collection(db, "users"));
             const actualCount = usersSnapshot.size;
             setUserCount(actualCount);
-            setLastUpdated(new Date());
             setLoading(false);
             console.log(`Manual refresh: ${actualCount} users`);
         } catch (err) {
@@ -131,7 +128,10 @@ const GuestLanding = () => {
             {/* Header */}
             <header className="header">
                 <div className="nav-container">
-                    <h1 className="logo">Let's Match!</h1>
+                    <h1 className="logo">
+                        <FaHandshake className="logo-icon" />
+                        Let's Match
+                    </h1>
                     <div className="auth-buttons">
                         <button className="login-btn" onClick={() => navigate("/login")}>
                             Login
@@ -146,53 +146,56 @@ const GuestLanding = () => {
             {/* Hero Section */}
             <section className="hero">
                 <div className="hero-content">
-                    <h2 className="hero-title">Find Your Perfect Match</h2>
-                    <p className="hero-subtitle">
-                        Connect with people who share your interests, values, and passions. 
-                        Our smart matching algorithm helps you discover meaningful relationships.
-                    </p>
-                    <div className="hero-buttons">
-                        <button className="cta-secondary" onClick={() => navigate("/about")}>
-                            Learn More
-                        </button>
+                    <div className="hero-text">
+                        <h2 className="hero-title">Your Next Great Connection Awaits</h2>
+                        <p className="hero-subtitle">
+                            From learning partners to life changers, from skilled experts to 
+                            kindred spirits — discover connections that truly matter.
+                        </p>
+                        <div className="hero-buttons">
+                            <button className="cta-primary" onClick={() => navigate("/register")}>
+                                Get Started
+                            </button>
+                        </div>
+                        <div className="about-us-section">
+                            <p className="about-us-text">
+                                Want to learn more about our mission? 
+                                <span className="about-us-link" onClick={() => navigate("/about")}>
+                                    Visit our About Us page
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div className="hero-image">
+                        <img 
+                            src="/hero_image.png" 
+                            alt="People connecting and matching" 
+                            className="hero-img"
+                        />
                     </div>
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section className="features">
+            {/* Perfect for Every Connection Section */}
+            <section className="perfect-connections">
                 <div className="container">
-                    <h3 className="section-title">Why Choose Let's Match?</h3>
-                    <div className="features-grid">
-                        <div className="feature-card">
-                            <FaHeart className="feature-icon" />
-                            <h4>Smart Matching</h4>
-                            <p>Our advanced algorithm analyzes compatibility based on shared interests and values for meaningful connections.</p>
+                    <h3 className="section-title">Perfect for Every Connection</h3>
+                    <p className="section-subtitle">Find the right match for any situation</p>
+                    <div className="connections-grid">
+                        <div className="connection-card">
+                            <FaGraduationCap className="connection-icon" />
+                            <h4>Students & Tutors</h4>
+                            <p>Connect with expert tutors or eager students for personalized learning experiences.</p>
                         </div>
-                        <div className="feature-card">
-                            <FaUsers className="feature-icon" />
-                            <h4>Diverse Community</h4>
-                            <p>Connect with people from all walks of life looking for friendship, romance, or professional networking.</p>
+                        <div className="connection-card">
+                            <FaTools className="connection-icon" />
+                            <h4>Homeowners & Local Pros</h4>
+                            <p>Find trusted professionals for home repairs, maintenance, and improvement projects.</p>
                         </div>
-                        <div className="feature-card">
-                            <FaShieldAlt className="feature-icon" />
-                            <h4>Safe & Secure</h4>
-                            <p>Your privacy and safety are our top priorities with advanced security measures and verification systems.</p>
-                        </div>
-                        <div className="feature-card">
-                            <FaComments className="feature-icon" />
-                            <h4>Easy Communication</h4>
-                            <p>Start conversations naturally with our intuitive messaging system and icebreaker questions.</p>
-                        </div>
-                        <div className="feature-card">
-                            <FaRocket className="feature-icon" />
-                            <h4>Quick Setup</h4>
-                            <p>Get started in minutes with our simple profile creation process and start meeting people right away.</p>
-                        </div>
-                        <div className="feature-card">
-                            <FaStar className="feature-icon" />
-                            <h4>Quality Matches</h4>
-                            <p>Focus on quality over quantity with curated matches that truly align with your preferences.</p>
+                        <div className="connection-card">
+                            <FaHeart className="connection-icon" />
+                            <h4>Romantic Interests</h4>
+                            <p>Discover meaningful connections based on compatibility and shared values.</p>
                         </div>
                     </div>
                 </div>
@@ -227,6 +230,43 @@ const GuestLanding = () => {
                 </div>
             </section>
 
+            {/* Smarter Matching with Every Answer Section */}
+            <section className="smarter-matching">
+                <div className="container">
+                    <h3 className="section-title">Smarter Matching with Every Answer</h3>
+                    <div className="matching-content">
+                        <div className="matching-text">
+                            <p className="section-subtitle">
+                                Our system scores compatibility from 0–100% so you can find 
+                                people who truly match your needs and values.
+                            </p>
+                            <ul className="matching-features">
+                                <li>Compatibility algorithms</li>
+                                <li>Daily matches</li>
+                                <li>Personalized profiles</li>
+                            </ul>
+                        </div>
+                        <div className="matching-demo">
+                            <div className="demo-profile">
+                                <div className="demo-avatar">JD</div>
+                                <div className="demo-info">
+                                    <h5>John Doe</h5>
+                                    <p className="demo-role">Math Tutor</p>
+                                </div>
+                            </div>
+                            <div className="demo-match">92% Match</div>
+                            <div className="demo-rating">
+                                <span className="demo-stars">★ 4.9 rating</span>
+                                <span>• 127 reviews</span>
+                            </div>
+                            <p className="demo-description">
+                                Experienced calculus tutor with 5+ years helping students excel in mathematics.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Dynamic User Count Section */}
             <section className="user-count-section">
                 <div className="container">
@@ -256,11 +296,6 @@ const GuestLanding = () => {
                                 <h3 className="count-title">
                                     Join our <span className="dynamic-count">{userCount.toLocaleString()}</span> users today!
                                 </h3>
-                                {lastUpdated && (
-                                    <p className="count-timestamp">
-                                        Live count • Last updated: {lastUpdated.toLocaleTimeString()}
-                                    </p>
-                                )}
                             </div>
                         )}
                         
